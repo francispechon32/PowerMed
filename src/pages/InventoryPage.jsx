@@ -10,6 +10,7 @@ export default function InventoryPage({ inventory, setInventory }) {
   const [entryF, setEntryF]     = useState("");
   const [productF, setProductF] = useState("");
   const [modal, setModal]       = useState(false);
+  const [editRow, setEditRow]   = useState(null);
 
   const filtered = useMemo(() => inventory.filter((r) => {
     const q = !search || r.variant.toLowerCase().includes(search.toLowerCase()) || r.date.includes(search);
@@ -18,11 +19,20 @@ export default function InventoryPage({ inventory, setInventory }) {
     return q && e && p;
   }), [inventory, search, entryF, productF]);
 
-  const handleAdd = (row) => setInventory((prev) => [row, ...prev]);
+  const handleSave = (row) => {
+    if (editRow) {
+      setInventory((prev) => prev.map((r) => r.id === editRow.id ? row : r));
+    } else {
+      setInventory((prev) => [row, ...prev]);
+    }
+  };
+  const openAdd = () => { setEditRow(null); setModal(true); };
+  const openEdit = (r) => { setEditRow(r); setModal(true); };
+  const handleClose = () => { setEditRow(null); setModal(false); };
 
   return (
     <div style={S.main}>
-      {modal && <Modal type="inv" onClose={() => setModal(false)} onSave={handleAdd} />}
+      {modal && <Modal key={editRow?.id ?? "new"} type="inv" editData={editRow} onClose={handleClose} onSave={handleSave} />}
       <div style={S.card}>
         <div style={S.cardHdr}>
           <span style={S.cardTitle}>📦 Inventory log</span>
@@ -37,7 +47,7 @@ export default function InventoryPage({ inventory, setInventory }) {
               <option value="">All products</option>
               {PRODUCTS.map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
-            <button style={S.addBtn} onClick={() => setModal(true)}>＋ Add entry</button>
+            <button style={S.addBtn} onClick={openAdd}>＋ Add entry</button>
           </div>
         </div>
         <div style={S.tblWrap}>
@@ -51,7 +61,7 @@ export default function InventoryPage({ inventory, setInventory }) {
             </thead>
             <tbody>
               {filtered.length ? filtered.map((r) => (
-                <tr key={r.id}>
+                <tr key={r.id} onClick={() => openEdit(r)} style={{ cursor: "pointer" }}>
                   <td style={S.td}>{fmtDate(r.date)}</td>
                   <td style={S.td}>{r.variant}</td>
                   <td style={S.tdR}>{peso(r.cost)}</td>

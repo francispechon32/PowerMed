@@ -14,6 +14,12 @@ export const CUSTOMERS = [
 export const REMARKS_LIST = ["SD", "Cash", "Online", "Billed"];
 export const CO_LIST      = ["HR", "Acctg", "Sir Teddy", "Acct1"];
 
+export const INCLUSIVES_LIST = [
+  "Syringe-1cc/ml", "Needles-4mm", "Bac Water-10ml",
+  "Peptides Pen", "Carton Box", "Plastic Box",
+  "Plastic cup", "Medicine",
+];
+
 export const SEED_INVENTORY = [
   { id:1,  date:"2026-02-05", variant:"Semaglutide-10mg",   cost:480,   qty:5,   entry:"In"  },
   { id:2,  date:"2026-02-05", variant:"Tirzepatide-10mg",   cost:480,   qty:19,  entry:"In"  },
@@ -124,10 +130,10 @@ export const SEED_SALES = [
   { id:34, date:"2026-05-26", customer:"Rita",          price:300,   qty:1, remarks:"Billed", co:"Sir Teddy", item:"Bac Water-10ml"    },
   { id:35, date:"2026-05-26", customer:"Errol",         price:4000,  qty:4, remarks:"Billed", co:"Sir Teddy", item:"Retatrutide-10mg"  },
   { id:36, date:"2026-05-26", customer:"Errol",         price:4000,  qty:2, remarks:"Billed", co:"Sir Teddy", item:"BPC157-5mg"        },
-  { id:37, date:"2026-06-01", customer:"Melody",        price:2000,  qty:1, remarks:"SD",     co:"HR",        item:"Tirzepatide-10mg"  },
-  { id:38, date:"2026-06-01", customer:"Juan",          price:6000,  qty:1, remarks:"SD",     co:"HR",        item:"Tirzepatide-30mg"  },
-  { id:39, date:"2026-06-01", customer:"Liza",          price:6000,  qty:1, remarks:"SD",     co:"HR",        item:"Tirzepatide-30mg"  },
-  { id:40, date:"2026-06-01", customer:"Alda",          price:2000,  qty:1, remarks:"SD",     co:"HR",        item:"Retatrutide-10mg"  },
+  { id:37, date:"2026-06-01", customer:"Melody",        price:2000,  qty:1, remarks:"SD",     co:"HR",        item:"Tirzepatide-10mg",  inclusives: ["Syringe-1cc/ml", "Needles-4mm", "Bac Water-10ml"] },
+  { id:38, date:"2026-06-01", customer:"Juan",          price:6000,  qty:1, remarks:"SD",     co:"HR",        item:"Tirzepatide-30mg",  inclusives: ["Peptides Pen", "Syringe-1cc/ml"] },
+  { id:39, date:"2026-06-01", customer:"Liza",          price:6000,  qty:1, remarks:"SD",     co:"HR",        item:"Tirzepatide-30mg",  inclusives: ["Plastic cup", "Medicine"] },
+  { id:40, date:"2026-06-01", customer:"Alda",          price:2000,  qty:1, remarks:"SD",     co:"HR",        item:"Retatrutide-10mg",  inclusives: ["Syringe-1cc/ml", "Bac Water-10ml"] },
 ];
 
 export const SEED_CHARITY = [

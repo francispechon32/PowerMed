@@ -10,20 +10,31 @@ export default function SalesPage({ sales, setSales }) {
   const [remarkF, setRemarkF]   = useState("");
   const [coF, setCoF]           = useState("");
   const [modal, setModal]       = useState(false);
+  const [editRow, setEditRow]   = useState(null);
 
   const filtered = useMemo(() => sales.filter((r) => {
-    const q  = !search  || r.customer.toLowerCase().includes(search.toLowerCase()) || r.item.toLowerCase().includes(search.toLowerCase());
+    const incStr = (r.inclusives || []).join(" ").toLowerCase();
+    const q  = !search  || r.customer.toLowerCase().includes(search.toLowerCase()) || r.item.toLowerCase().includes(search.toLowerCase()) || incStr.includes(search.toLowerCase());
     const rm = !remarkF || r.remarks === remarkF;
     const c  = !coF     || r.co === coF;
     return q && rm && c;
   }), [sales, search, remarkF, coF]);
 
   const total = filtered.reduce((s, r) => s + r.price * r.qty, 0);
-  const handleAdd = (row) => setSales((prev) => [row, ...prev]);
+  const handleSave = (row) => {
+    if (editRow) {
+      setSales((prev) => prev.map((r) => r.id === editRow.id ? row : r));
+    } else {
+      setSales((prev) => [row, ...prev]);
+    }
+  };
+  const openAdd = () => { setEditRow(null); setModal(true); };
+  const openEdit = (r) => { setEditRow(r); setModal(true); };
+  const handleClose = () => { setEditRow(null); setModal(false); };
 
   return (
     <div style={S.main}>
-      {modal && <Modal type="sales" onClose={() => setModal(false)} onSave={handleAdd} />}
+      {modal && <Modal key={editRow?.id ?? "new"} type="sales" editData={editRow} onClose={handleClose} onSave={handleSave} />}
       <div style={S.card}>
         <div style={S.cardHdr}>
           <span style={S.cardTitle}>🧾 Sales transactions — <strong>{peso(total)}</strong> total</span>
@@ -37,21 +48,21 @@ export default function SalesPage({ sales, setSales }) {
               <option value="">All C/O</option>
               {CO_LIST.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
-            <button style={S.addBtn} onClick={() => setModal(true)}>＋ Add sale</button>
+            <button style={S.addBtn} onClick={openAdd}>＋ Add sale</button>
           </div>
         </div>
         <div style={S.tblWrap}>
           <table style={S.tbl}>
             <thead>
               <tr>
-                {["Date","Customer","Price","Qty","Amount","Remarks","C/O","Item"].map((h, i) => (
+                {["Date","Customer","Price","Qty","Amount","Remarks","C/O","Item","Inclusives"].map((h, i) => (
                   <th key={h} style={{ ...S.th, textAlign: [2,3,4].includes(i) ? "right" : "left" }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length ? filtered.map((r) => (
-                <tr key={r.id}>
+                <tr key={r.id} onClick={() => openEdit(r)} style={{ cursor: "pointer" }}>
                   <td style={S.td}>{fmtDate(r.date)}</td>
                   <td style={S.td}>{r.customer}</td>
                   <td style={S.tdR}>{peso(r.price)}</td>
@@ -60,9 +71,14 @@ export default function SalesPage({ sales, setSales }) {
                   <td style={S.td}><Badge label={r.remarks} /></td>
                   <td style={S.td}>{r.co}</td>
                   <td style={S.td}><Pill label={r.item} /></td>
+                  <td style={S.td}>
+                    {(r.inclusives || []).length > 0
+                      ? r.inclusives.map((inc) => <Pill key={inc} label={inc} />)
+                      : <span style={{ color: "#a8a29e", fontSize: 11 }}>—</span>}
+                  </td>
                 </tr>
               )) : (
-                <tr><td colSpan={8} style={S.empty}>No sales match your filter.</td></tr>
+                <tr><td colSpan={9} style={S.empty}>No sales match your filter.</td></tr>
               )}
             </tbody>
           </table>

@@ -81,7 +81,7 @@ export default function DashboardPage({ inventory, sales, charity }) {
       <div className="pm-dash-bottom">
         <div style={S.card}>
           <div style={S.cardHdr}><span style={S.cardTitle}>📦 Stock levels</span></div>
-          <div style={{ ...S.tblWrap, maxHeight: 280 }}>
+          <div style={S.tblWrap}>
             <table style={S.tbl}>
               <thead>
                 <tr>

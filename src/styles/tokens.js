@@ -18,16 +18,16 @@ export const COLORS = {
 export const SHADOW = "0 10px 30px rgba(28,25,23,0.06), 0 2px 8px rgba(28,25,23,0.03)";
 
 export const S = {
-  main:    { display: "flex", flexDirection: "column", gap: 18 },
+  main:    { display: "flex", flexDirection: "column", gap: 18, flex: 1, minHeight: 0 },
   metricsGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 14 },
   metric: { background: "#fff", borderRadius: 18, padding: "16px 18px", boxShadow: SHADOW },
   metricLabel: { fontSize: 11, color: "#78716c", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 },
   metricValue: { fontSize: 22, fontWeight: 700, lineHeight: 1.1 },
   metricSub:   { fontSize: 11, color: "#78716c", marginTop: 4 },
-  card:    { background: "#fff", borderRadius: 22, boxShadow: SHADOW, overflow: "hidden" },
+  card:    { background: "#fff", borderRadius: 22, boxShadow: SHADOW, overflow: "hidden", display: "flex", flexDirection: "column", flex: 1, minHeight: 0 },
   cardHdr: { padding: "16px 20px", borderBottom: "1px solid #f5f5f4", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 },
   cardTitle:{ fontSize: 14, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, color: "#1c1917" },
-  tblWrap: { overflowX: "auto", maxHeight: 340, overflowY: "auto" },
+  tblWrap: { overflowX: "auto", flex: 1, minHeight: 0, overflowY: "auto" },
   tbl:     { width: "100%", borderCollapse: "collapse", fontSize: 12 },
   th:      { background: "#fafaf9", padding: "10px 14px", textAlign: "left", fontWeight: 600, fontSize: 11, color: "#78716c", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap", borderBottom: "1px solid #f5f5f4", position: "sticky", top: 0, zIndex: 2 },
   td:      { padding: "10px 14px", borderBottom: "1px solid #f5f5f4", whiteSpace: "nowrap" },

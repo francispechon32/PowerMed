@@ -1,29 +1,48 @@
 import { useState } from "react";
-import { PRODUCTS, CUSTOMERS, REMARKS_LIST, CO_LIST } from "../data/seeds";
+import { PRODUCTS, CUSTOMERS, REMARKS_LIST, CO_LIST, INCLUSIVES_LIST } from "../data/seeds";
 import { nextId } from "../utils/helpers";
 import { S } from "../styles/tokens";
 
 const EMPTY_INV     = { date: "", variant: "", cost: "", qty: "", entry: "In" };
-const EMPTY_SALE    = { date: "", customer: "", item: "", price: "", qty: "", remarks: "SD", co: "HR" };
+const EMPTY_SALE    = { date: "", customer: "", item: "", price: "", qty: "", remarks: "SD", co: "HR", inclusives: [] };
 const EMPTY_CHARITY = { date: "", beneficiary: "", item: "", cost: "", qty: "" };
 
-export default function Modal({ type, onClose, onSave }) {
-  const [form, setForm] = useState(
-    type === "inv" ? EMPTY_INV : type === "sales" ? EMPTY_SALE : EMPTY_CHARITY
+export default function Modal({ type, onClose, onSave, editData }) {
+  const [form, setForm] = useState(() =>
+    editData ? { ...editData } : type === "inv" ? { ...EMPTY_INV } : type === "sales" ? { ...EMPTY_SALE } : { ...EMPTY_CHARITY }
   );
+  const [customInc, setCustomInc] = useState("");
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const today = new Date().toISOString().split("T")[0];
+  const isEdit = !!editData;
+
+  const toggleInc = (item) => {
+    const cur = form.inclusives || [];
+    set("inclusives", cur.includes(item) ? cur.filter((i) => i !== item) : [...cur, item]);
+  };
+
+  const addCustomInc = () => {
+    const val = customInc.trim();
+    if (!val) return;
+    const cur = form.inclusives || [];
+    if (!cur.includes(val)) set("inclusives", [...cur, val]);
+    setCustomInc("");
+  };
+
+  const removeInc = (item) => {
+    set("inclusives", (form.inclusives || []).filter((i) => i !== item));
+  };
 
   const handleSave = () => {
     if (type === "inv") {
       if (!form.variant || !form.qty || !form.cost) return alert("Fill in all required fields.");
-      onSave({ ...form, id: nextId(), cost: +form.cost, qty: +form.qty });
+      onSave({ ...form, id: isEdit ? editData.id : nextId(), cost: +form.cost, qty: +form.qty });
     } else if (type === "sales") {
       if (!form.customer || !form.item || !form.qty || !form.price) return alert("Fill in all required fields.");
-      onSave({ ...form, id: nextId(), price: +form.price, qty: +form.qty });
+      onSave({ ...form, id: isEdit ? editData.id : nextId(), price: +form.price, qty: +form.qty });
     } else {
       if (!form.beneficiary || !form.item || !form.qty || !form.cost) return alert("Fill in all required fields.");
-      onSave({ ...form, id: nextId(), cost: +form.cost, qty: +form.qty });
+      onSave({ ...form, id: isEdit ? editData.id : nextId(), cost: +form.cost, qty: +form.qty });
     }
     onClose();
   };
@@ -43,7 +62,11 @@ export default function Modal({ type, onClose, onSave }) {
     </div>
   );
 
-  const titles = { inv: "Add inventory entry", sales: "Add sales transaction", charity: "Add charity entry" };
+  const titles = {
+    inv:     isEdit ? "Edit inventory entry"     : "Add inventory entry",
+    sales:   isEdit ? "Edit sales transaction"   : "Add sales transaction",
+    charity: isEdit ? "Edit charity entry"       : "Add charity entry",
+  };
 
   return (
     <div style={S.modalBg} onClick={(e) => e.target === e.currentTarget && onClose()}>
@@ -70,6 +93,51 @@ export default function Modal({ type, onClose, onSave }) {
           {inp("Item", "item", "text", PRODUCTS)}
           {inp("Price (₱)", "price", "number")}
           {inp("Qty", "qty", "number")}
+          <div style={S.formRow}>
+            <label style={S.formLbl}>Inclusives (items included with sale)</label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
+              {INCLUSIVES_LIST.map((inc) => {
+                const sel = (form.inclusives || []).includes(inc);
+                return (
+                  <button key={inc} type="button" onClick={() => toggleInc(inc)}
+                    style={{
+                      padding: "4px 12px", borderRadius: 999, border: "none", cursor: "pointer",
+                      fontSize: 12, fontWeight: 500, fontFamily: "inherit",
+                      background: sel ? "#ea580c" : "#f5f5f4",
+                      color: sel ? "#fff" : "#44403c",
+                      transition: "all 0.12s ease",
+                    }}>
+                    {inc}
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+              <input style={{ ...S.formInp, flex: 1 }} placeholder="Custom item…"
+                value={customInc} onChange={(e) => setCustomInc(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustomInc(); } }} />
+              <button type="button" onClick={addCustomInc}
+                style={{ ...S.btnSecondary, padding: "8px 14px", fontSize: 12 }}>Add</button>
+            </div>
+            {(form.inclusives || []).length > 0 && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 8 }}>
+                {(form.inclusives || []).map((inc) => (
+                  <span key={inc} style={{
+                    display: "inline-flex", alignItems: "center", gap: 4,
+                    padding: "2px 6px 2px 10px", borderRadius: 999, fontSize: 11,
+                    background: "#fff7ed", color: "#9a3412", fontWeight: 500,
+                  }}>
+                    {inc}
+                    <button type="button" onClick={() => removeInc(inc)}
+                      style={{
+                        background: "none", border: "none", cursor: "pointer",
+                        fontSize: 14, lineHeight: 1, color: "#9a3412", padding: 0,
+                      }}>×</button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
           <div style={S.formRow}>
             <label style={S.formLbl}>Remarks</label>
             <select style={S.formInp} value={form.remarks} onChange={(e) => set("remarks", e.target.value)}>

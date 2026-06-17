@@ -7,6 +7,7 @@ import Modal from "../components/Modal";
 export default function CharityPage({ charity, setCharity }) {
   const [search, setSearch] = useState("");
   const [modal, setModal]   = useState(false);
+  const [editRow, setEditRow]   = useState(null);
 
   const filtered = useMemo(() => charity.filter((r) =>
     !search ||
@@ -16,11 +17,20 @@ export default function CharityPage({ charity, setCharity }) {
 
   const totalQty = charity.reduce((s, r) => s + r.qty, 0);
   const totalVal = charity.reduce((s, r) => s + r.qty * r.cost, 0);
-  const handleAdd = (row) => setCharity((prev) => [row, ...prev]);
+  const handleSave = (row) => {
+    if (editRow) {
+      setCharity((prev) => prev.map((r) => r.id === editRow.id ? row : r));
+    } else {
+      setCharity((prev) => [row, ...prev]);
+    }
+  };
+  const openAdd = () => { setEditRow(null); setModal(true); };
+  const openEdit = (r) => { setEditRow(r); setModal(true); };
+  const handleClose = () => { setEditRow(null); setModal(false); };
 
   return (
     <div style={S.main}>
-      {modal && <Modal type="charity" onClose={() => setModal(false)} onSave={handleAdd} />}
+      {modal && <Modal key={editRow?.id ?? "new"} type="charity" editData={editRow} onClose={handleClose} onSave={handleSave} />}
       <div style={S.metricsGrid}>
         <div style={S.metric}><div style={S.metricLabel}>Total units given</div><div style={{ ...S.metricValue, color: COLORS.orange }}>{totalQty}</div></div>
         <div style={S.metric}><div style={S.metricLabel}>Total value (cost)</div><div style={{ ...S.metricValue, color: COLORS.amber }}>{peso(totalVal)}</div></div>
@@ -32,7 +42,7 @@ export default function CharityPage({ charity, setCharity }) {
           <span style={S.cardTitle}>❤️ Charity distribution log</span>
           <div style={S.searchRow}>
             <input style={{ ...S.inputSm, width: 180 }} placeholder="Beneficiary / item…" value={search} onChange={(e) => setSearch(e.target.value)} />
-            <button style={S.addBtn} onClick={() => setModal(true)}>＋ Add entry</button>
+            <button style={S.addBtn} onClick={openAdd}>＋ Add entry</button>
           </div>
         </div>
         <div style={S.tblWrap}>
@@ -46,7 +56,7 @@ export default function CharityPage({ charity, setCharity }) {
             </thead>
             <tbody>
               {filtered.length ? filtered.map((r) => (
-                <tr key={r.id}>
+                <tr key={r.id} onClick={() => openEdit(r)} style={{ cursor: "pointer" }}>
                   <td style={S.td}>{fmtDate(r.date)}</td>
                   <td style={S.td}>{r.beneficiary}</td>
                   <td style={S.tdR}>{peso(r.cost)}</td>
