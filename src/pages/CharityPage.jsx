@@ -6,17 +6,19 @@ import Modal from "../components/Modal";
 import { HeartHandshake, Wallet, TrendingUp, BarChart3 } from "../components/Icons";
 import Pagination, { PER_PAGE } from "../components/Pagination";
 
-export default function CharityPage({ charity, setCharity }) {
+export default function CharityPage({ charity, setCharity, search: headerSearch }) {
   const [search, setSearch]   = useState("");
   const [modal, setModal]     = useState(false);
   const [editRow, setEditRow] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const filtered = useMemo(() => charity.filter((r) =>
-    !search ||
-    r.beneficiary.toLowerCase().includes(search.toLowerCase()) ||
-    r.item.toLowerCase().includes(search.toLowerCase())
-  ), [charity, search]);
+  const filtered = useMemo(() => charity.filter((r) => {
+    const sq = search.toLowerCase();
+    const q  = !search || r.beneficiary.toLowerCase().includes(sq) || r.item.toLowerCase().includes(sq);
+    const hq = headerSearch ? headerSearch.toLowerCase() : "";
+    const h  = !headerSearch || r.beneficiary.toLowerCase().includes(hq) || r.item.toLowerCase().includes(hq);
+    return q && h;
+  }), [charity, search, headerSearch]);
 
   useEffect(() => { setCurrentPage(1); }, [search]);
 

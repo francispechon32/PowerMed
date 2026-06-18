@@ -104,16 +104,28 @@ function stockStatus(bal) {
   return               { label: "In Stock",   color: "#15803d",    bg: "#dcfce7" };
 }
 
-export default function DashboardPage({ inventory, sales, charity, onNavigate }) {
+export default function DashboardPage({ inventory, sales, charity, onNavigate, search }) {
   const [period, setPeriod] = useState("Today");
   const [showProfit, setShowProfit] = useState(false);
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
 
   const PERIOD_OPTIONS = ["Today", "This Week", "This Month", "Last Month", "This Year", "All Time"];
 
-  const filteredInventory = useMemo(() => inventory.filter((r) => inPeriod(r.date, period)), [inventory, period]);
-  const filteredSales     = useMemo(() => sales.filter((r) => inPeriod(r.date, period)), [sales, period]);
-  const filteredCharity   = useMemo(() => charity.filter((r) => inPeriod(r.date, period)), [charity, period]);
+  const qry = search.toLowerCase();
+  const filteredInventory = useMemo(() => inventory.filter((r) =>
+    inPeriod(r.date, period) && (!search || r.variant.toLowerCase().includes(qry))
+  ), [inventory, period, search]);
+  const filteredSales     = useMemo(() => sales.filter((r) =>
+    inPeriod(r.date, period) && (!search ||
+      r.customer.toLowerCase().includes(qry) ||
+      r.item.toLowerCase().includes(qry) ||
+      (r.inclusives || []).join(" ").toLowerCase().includes(qry))
+  ), [sales, period, search]);
+  const filteredCharity   = useMemo(() => charity.filter((r) =>
+    inPeriod(r.date, period) && (!search ||
+      r.beneficiary.toLowerCase().includes(qry) ||
+      r.item.toLowerCase().includes(qry))
+  ), [charity, period, search]);
 
   const totalIn     = filteredInventory.filter((r) => r.entry === "In").reduce((s, r) => s + r.qty, 0);
   const totalOut    = filteredInventory.filter((r) => r.entry === "Out").reduce((s, r) => s + r.qty, 0);

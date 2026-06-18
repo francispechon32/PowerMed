@@ -10,7 +10,7 @@ import SelectDropdown from "../components/SelectDropdown";
 const REMARK_OPTIONS = REMARKS_LIST.map((r) => ({ value: r, label: r }));
 const CO_OPTIONS = CO_LIST.map((c) => ({ value: c, label: c }));
 
-export default function SalesPage({ sales, setSales }) {
+export default function SalesPage({ sales, setSales, search: headerSearch }) {
   const [search, setSearch]   = useState("");
   const [remarkF, setRemarkF] = useState("");
   const [coF, setCoF]         = useState("");
@@ -20,11 +20,14 @@ export default function SalesPage({ sales, setSales }) {
 
   const filtered = useMemo(() => sales.filter((r) => {
     const incStr = (r.inclusives || []).join(" ").toLowerCase();
-    const q  = !search  || r.customer.toLowerCase().includes(search.toLowerCase()) || r.item.toLowerCase().includes(search.toLowerCase()) || incStr.includes(search.toLowerCase());
+    const sq = search.toLowerCase();
+    const q  = !search  || r.customer.toLowerCase().includes(sq) || r.item.toLowerCase().includes(sq) || incStr.includes(sq);
+    const hq = headerSearch ? headerSearch.toLowerCase() : "";
+    const h  = !headerSearch || r.customer.toLowerCase().includes(hq) || r.item.toLowerCase().includes(hq) || incStr.includes(hq);
     const rm = !remarkF || r.remarks === remarkF;
     const c  = !coF     || r.co === coF;
-    return q && rm && c;
-  }), [sales, search, remarkF, coF]);
+    return q && h && rm && c;
+  }), [sales, search, headerSearch, remarkF, coF]);
 
   useEffect(() => { setCurrentPage(1); }, [search, remarkF, coF]);
 

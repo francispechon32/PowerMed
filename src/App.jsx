@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import "./Dashboard.css";
 import { SEED_INVENTORY, SEED_SALES, SEED_CHARITY } from "./data/seeds";
 import { PAGE_ICONS, IconGrid, IconLogout, IconSearch, IconBell, IconChevron } from "./components/Icons";
+import { COLORS } from "./styles/tokens";
 import DashboardPage from "./pages/DashboardPage";
 import InventoryPage from "./pages/InventoryPage";
 import SalesPage     from "./pages/SalesPage";
@@ -24,8 +25,90 @@ export default function App() {
   const [sales,       setSales]       = useState(SEED_SALES);
   const [charity,     setCharity]     = useState(SEED_CHARITY);
   const [search,      setSearch]      = useState("");
+  const [showNotifDropdown, setShowNotifDropdown] = useState(false);
+  const [showLowStockAlert, setShowLowStockAlert] = useState(false);
+  const alertShown = useRef(false);
+
+  const lowStockItems = useMemo(() => {
+    const m = {};
+    inventory.forEach((r) => {
+      if (!m[r.variant]) m[r.variant] = { inQty: 0, outQty: 0 };
+      if (r.entry === "In") m[r.variant].inQty += r.qty;
+      else m[r.variant].outQty += r.qty;
+    });
+    return Object.entries(m)
+      .map(([variant, v]) => ({ variant, balance: v.inQty - v.outQty }))
+      .filter((item) => item.balance < 5)
+      .sort((a, b) => a.balance - b.balance);
+  }, [inventory]);
+
+  useEffect(() => {
+    if (!alertShown.current && lowStockItems.length > 0) {
+      setShowLowStockAlert(true);
+      alertShown.current = true;
+    }
+  }, [lowStockItems.length]);
 
   const pageLabel = PAGES.find((p) => p.key === page)?.label ?? "Dashboard";
+
+  const notifBell = (
+    <div style={{ position: "relative" }}>
+      <button className="pm-icon-btn" aria-label="Notifications" onClick={() => setShowNotifDropdown((o) => !o)}>
+        <IconBell />
+        {lowStockItems.length > 0 && (
+          <span style={{
+            position: "absolute", top: -2, right: -2,
+            background: COLORS.coral, color: "#fff",
+            fontSize: 10, fontWeight: 700,
+            width: 17, height: 17, borderRadius: "50%",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            lineHeight: 1,
+          }}>
+            {lowStockItems.length}
+          </span>
+        )}
+      </button>
+      {showNotifDropdown && (
+        <>
+          <div style={{ position: "fixed", inset: 0, zIndex: 49 }} onClick={() => setShowNotifDropdown(false)} />
+          <div style={{
+            position: "absolute", top: "100%", right: 0, marginTop: 6, zIndex: 50,
+            background: "#fff", borderRadius: 16, padding: 16, minWidth: 280,
+            boxShadow: "0 10px 30px rgba(28,25,23,0.15)",
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#1c1917", marginBottom: 10 }}>Low Stock Alerts</div>
+            {lowStockItems.length === 0 ? (
+              <div style={{ fontSize: 12, color: "#a8a29e" }}>All items are well-stocked.</div>
+            ) : (
+              <>
+                {lowStockItems.map((item) => (
+                  <div key={item.variant} style={{
+                    display: "flex", justifyContent: "space-between",
+                    padding: "6px 0", fontSize: 12,
+                    borderBottom: "1px solid #f5f5f4",
+                  }}>
+                    <span>{item.variant}</span>
+                    <span style={{ color: item.balance <= 0 ? COLORS.coral : COLORS.orange, fontWeight: 600 }}>
+                      {item.balance} left
+                    </span>
+                  </div>
+                ))}
+                <button onClick={() => { setPage("stock"); setShowNotifDropdown(false); }}
+                  style={{
+                    marginTop: 10, width: "100%", padding: "8px",
+                    borderRadius: 999, border: "none", background: COLORS.orange,
+                    color: "#fff", cursor: "pointer", fontSize: 12,
+                    fontFamily: "inherit", fontWeight: 600,
+                  }}>
+                  View stock page →
+                </button>
+              </>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
 
   return (
     <div className="pm-app">
@@ -84,7 +167,7 @@ export default function App() {
               />
             </div>
             <div className="pm-header-actions">
-              <button className="pm-icon-btn" aria-label="Notifications"><IconBell /></button>
+              {notifBell}
               <div className="pm-profile">
                 <div className="pm-avatar">PM</div>
                 <span className="pm-profile-name">PowerMed Admin</span>
@@ -94,14 +177,79 @@ export default function App() {
           </header>
 
           <main className="pm-content">
-            {page === "dashboard" && <DashboardPage inventory={inventory} sales={sales} charity={charity} onNavigate={setPage} />}
-            {page === "inventory" && <InventoryPage inventory={inventory} setInventory={setInventory} />}
-            {page === "sales"     && <SalesPage     sales={sales}         setSales={setSales}         />}
-            {page === "charity"   && <CharityPage   charity={charity}     setCharity={setCharity}     />}
-            {page === "stock"     && <StockPage     inventory={inventory}                             />}
+            {page === "dashboard" && (
+              <DashboardPage inventory={inventory} sales={sales} charity={charity}
+                onNavigate={setPage} search={search} />
+            )}
+            {page === "inventory" && (
+              <InventoryPage inventory={inventory} setInventory={setInventory} search={search} />
+            )}
+            {page === "sales" && (
+              <SalesPage sales={sales} setSales={setSales} search={search} />
+            )}
+            {page === "charity" && (
+              <CharityPage charity={charity} setCharity={setCharity} search={search} />
+            )}
+            {page === "stock" && (
+              <StockPage inventory={inventory} search={search} />
+            )}
           </main>
         </div>
       </div>
+
+      {showLowStockAlert && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 200,
+          background: "rgba(28,25,23,0.45)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          backdropFilter: "blur(4px)",
+        }} onClick={(e) => e.target === e.currentTarget && setShowLowStockAlert(false)}>
+          <div style={{
+            background: "#fff", borderRadius: 24, padding: 24,
+            maxWidth: 400, width: "95vw", maxHeight: "90vh", overflowY: "auto",
+            boxShadow: "0 24px 60px rgba(28,25,23,0.18)",
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+              <span style={{ fontSize: 14, fontWeight: 600, color: COLORS.coral }}>
+                ⚠ Low Stock Alert
+              </span>
+              <button onClick={() => setShowLowStockAlert(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "#78716c", padding: "2px 6px", lineHeight: 1 }}>
+                ✕
+              </button>
+            </div>
+            <div style={{ fontSize: 12, color: "#44403c", marginBottom: 12 }}>
+              {lowStockItems.length} item{lowStockItems.length > 1 ? "s" : ""} {lowStockItems.length > 1 ? "are" : "is"} running low on stock:
+            </div>
+            {lowStockItems.slice(0, 5).map((item) => (
+              <div key={item.variant} style={{
+                display: "flex", justifyContent: "space-between",
+                padding: "6px 0", fontSize: 12,
+                borderBottom: "1px solid #f5f5f4",
+              }}>
+                <span>{item.variant}</span>
+                <span style={{ color: item.balance <= 0 ? COLORS.coral : COLORS.orange, fontWeight: 600 }}>
+                  {item.balance} left
+                </span>
+              </div>
+            ))}
+            {lowStockItems.length > 5 && (
+              <div style={{ fontSize: 11, color: "#a8a29e", marginTop: 4 }}>
+                +{lowStockItems.length - 5} more
+              </div>
+            )}
+            <button onClick={() => { setPage("stock"); setShowLowStockAlert(false); }}
+              style={{
+                marginTop: 14, width: "100%", padding: "10px",
+                borderRadius: 999, border: "none", background: COLORS.orange,
+                color: "#fff", cursor: "pointer", fontSize: 13,
+                fontFamily: "inherit", fontWeight: 600,
+              }}>
+              View stock page →
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

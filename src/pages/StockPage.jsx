@@ -4,7 +4,7 @@ import { peso, inRange, fmtDateShort } from "../utils/helpers";
 import { Calendar, IconChevron } from "../components/Icons";
 import Pagination, { PER_PAGE } from "../components/Pagination";
 
-export default function StockPage({ inventory }) {
+export default function StockPage({ inventory, search }) {
   const [dateRange, setDateRange] = useState({ start: "", end: "" });
   const [showPicker, setShowPicker] = useState(false);
   const [draftStart, setDraftStart] = useState("");
@@ -23,9 +23,11 @@ export default function StockPage({ inventory }) {
     return m;
   }, [filtered]);
 
-  const stockEntries = Object.entries(stockMap);
+  const stockEntries = Object.entries(stockMap).filter(([k]) =>
+    !search || k.toLowerCase().includes(search.toLowerCase())
+  );
 
-  useEffect(() => { setCurrentPage(1); }, [dateRange]);
+  useEffect(() => { setCurrentPage(1); }, [dateRange, search]);
 
   const totalPages = Math.max(1, Math.ceil(stockEntries.length / PER_PAGE));
   const paged      = stockEntries.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);

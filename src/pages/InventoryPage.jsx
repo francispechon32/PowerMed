@@ -13,7 +13,7 @@ const ENTRY_OPTIONS = [
 ];
 const PRODUCT_OPTIONS = PRODUCTS.map((p) => ({ value: p, label: p }));
 
-export default function InventoryPage({ inventory, setInventory }) {
+export default function InventoryPage({ inventory, setInventory, search: headerSearch }) {
   const [search, setSearch]     = useState("");
   const [entryF, setEntryF]     = useState("");
   const [productF, setProductF] = useState("");
@@ -22,11 +22,14 @@ export default function InventoryPage({ inventory, setInventory }) {
   const [currentPage, setCurrentPage] = useState(1);
 
   const filtered = useMemo(() => inventory.filter((r) => {
-    const q = !search || r.variant.toLowerCase().includes(search.toLowerCase()) || r.date.includes(search);
-    const e = !entryF   || r.entry === entryF;
-    const p = !productF || r.variant === productF;
-    return q && e && p;
-  }), [inventory, search, entryF, productF]);
+    const sq = search.toLowerCase();
+    const q  = !search || r.variant.toLowerCase().includes(sq) || r.date.includes(sq);
+    const hq = headerSearch ? headerSearch.toLowerCase() : "";
+    const h  = !headerSearch || r.variant.toLowerCase().includes(hq) || r.date.includes(hq);
+    const e  = !entryF   || r.entry === entryF;
+    const p  = !productF || r.variant === productF;
+    return q && h && e && p;
+  }), [inventory, search, headerSearch, entryF, productF]);
 
   useEffect(() => { setCurrentPage(1); }, [search, entryF, productF]);
 
