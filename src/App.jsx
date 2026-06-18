@@ -91,7 +91,7 @@ export default function App() {
           </header>
 
           <main className="pm-content">
-            {page === "dashboard" && <DashboardPage inventory={inventory} sales={sales} charity={charity} />}
+            {page === "dashboard" && <DashboardPage inventory={inventory} sales={sales} charity={charity} onNavigate={setPage} />}
             {page === "inventory" && <InventoryPage inventory={inventory} setInventory={setInventory} />}
             {page === "sales"     && <SalesPage     sales={sales}         setSales={setSales}         />}
             {page === "charity"   && <CharityPage   charity={charity}     setCharity={setCharity}     />}

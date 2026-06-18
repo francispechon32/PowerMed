@@ -1,22 +1,83 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { COLORS, S } from "../styles/tokens";
-import { peso } from "../utils/helpers";
+import { peso, inRange, fmtDateShort } from "../utils/helpers";
+import { Calendar, IconChevron } from "../components/Icons";
 
 export default function StockPage({ inventory }) {
+  const [dateRange, setDateRange] = useState({ start: "", end: "" });
+  const [showPicker, setShowPicker] = useState(false);
+  const [draftStart, setDraftStart] = useState("");
+  const [draftEnd, setDraftEnd] = useState("");
+
+  const filtered = useMemo(() => inventory.filter((r) => inRange(r.date, dateRange.start, dateRange.end)), [inventory, dateRange]);
+
   const stockMap = useMemo(() => {
     const m = {};
-    inventory.forEach((r) => {
+    filtered.forEach((r) => {
       if (!m[r.variant]) m[r.variant] = { inQty: 0, inVal: 0, outQty: 0, outVal: 0 };
       if (r.entry === "In") { m[r.variant].inQty += r.qty; m[r.variant].inVal += r.qty * r.cost; }
       else { m[r.variant].outQty += r.qty; m[r.variant].outVal += r.qty * r.cost; }
     });
     return m;
-  }, [inventory]);
+  }, [filtered]);
 
   return (
     <div style={S.main}>
-      <div style={S.card}>
-        <div style={S.cardHdr}><span style={S.cardTitle}>📊 Stock summary by product</span></div>
+      <div style={{ ...S.card, overflow: "visible" }}>
+        <div style={S.cardHdr}>
+          <span style={S.cardTitle}>📊 Stock summary by product</span>
+          <div style={{ position: "relative" }}>
+            <button onClick={() => { setDraftStart(dateRange.start || ""); setDraftEnd(dateRange.end || ""); setShowPicker(true); }}
+              style={{
+                display: "flex", alignItems: "center", gap: 6,
+                padding: "8px 14px", height: 36, border: "none",
+                borderRadius: 999, background: "#f5f5f4", color: "#1c1917",
+                fontFamily: "inherit", fontSize: 12, cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}>
+              <Calendar size={15} strokeWidth={2} />
+              <span>{dateRange.start ? `${fmtDateShort(dateRange.start)} – ${fmtDateShort(dateRange.end)}` : "All dates"}</span>
+              {dateRange.start ? (
+                <span onClick={(e) => { e.stopPropagation(); setDateRange({ start: "", end: "" }); }}
+                  style={{ marginLeft: 4, color: "#a8a29e", fontSize: 14, lineHeight: 1 }}>✕</span>
+              ) : <IconChevron size={14} strokeWidth={2.2} />}
+            </button>
+            {showPicker && (
+              <>
+                <div style={{ position: "fixed", inset: 0, zIndex: 49 }} onClick={() => setShowPicker(false)} />
+                <div style={{
+                  position: "absolute", top: "100%", right: 0, marginTop: 6, zIndex: 50,
+                  background: "#fff", borderRadius: 16, padding: 16,
+                  boxShadow: "0 10px 30px rgba(28,25,23,0.12), 0 2px 8px rgba(28,25,23,0.06)",
+                  display: "flex", flexDirection: "column", gap: 10, minWidth: 250,
+                }}>
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: 11, color: "#78716c", marginBottom: 4, fontWeight: 600 }}>From</label>
+                      <input type="date" value={draftStart} onChange={(e) => setDraftStart(e.target.value)}
+                        style={{ padding: "8px 10px", borderRadius: 10, border: "1px solid #e5e5e5", fontSize: 12, fontFamily: "inherit", color: "#1c1917", background: "#fff", outline: "none", width: 140 }} />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: 11, color: "#78716c", marginBottom: 4, fontWeight: 600 }}>To</label>
+                      <input type="date" value={draftEnd} onChange={(e) => setDraftEnd(e.target.value)}
+                        style={{ padding: "8px 10px", borderRadius: 10, border: "1px solid #e5e5e5", fontSize: 12, fontFamily: "inherit", color: "#1c1917", background: "#fff", outline: "none", width: 140 }} />
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 4 }}>
+                    <button onClick={() => { setDateRange({ start: "", end: "" }); setShowPicker(false); }}
+                      style={{ padding: "6px 14px", borderRadius: 999, border: "none", background: "#f5f5f4", cursor: "pointer", fontSize: 12, fontFamily: "inherit", color: "#44403c", fontWeight: 500 }}>
+                      Clear
+                    </button>
+                    <button onClick={() => { setDateRange({ start: draftStart, end: draftEnd }); setShowPicker(false); }}
+                      style={{ padding: "6px 14px", borderRadius: 999, border: "none", background: COLORS.orange, cursor: "pointer", fontSize: 12, fontFamily: "inherit", color: "#fff", fontWeight: 600 }}>
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
         <div style={S.tblWrap}>
           <table style={S.tbl}>
             <thead>

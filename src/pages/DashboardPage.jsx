@@ -11,38 +11,66 @@ import {
 } from "../components/Icons";
 import { COLORS, S } from "../styles/tokens";
 import { REMARKS_LIST } from "../data/seeds";
-import { peso } from "../utils/helpers";
+import { peso, inPeriod } from "../utils/helpers";
 import { Pill } from "../components/Badge";
 
-export default function DashboardPage({ inventory, sales, charity }) {
-  const [period, setPeriod] = useState("This Month");
+const NAV_MAP = {
+  "Stock movement": "stock",
+  "Total sales": "sales",
+  "Charity given": "charity",
+};
 
-  const totalIn     = inventory.filter((r) => r.entry === "In").reduce((s, r) => s + r.qty, 0);
-  const totalOut    = inventory.filter((r) => r.entry === "Out").reduce((s, r) => s + r.qty, 0);
-  const totalOutVal = inventory.filter((r) => r.entry === "Out").reduce((s, r) => s + r.qty * r.cost, 0);
+export default function DashboardPage({ inventory, sales, charity, onNavigate }) {
+  const [period, setPeriod] = useState("All Time");
+  const [showProfit, setShowProfit] = useState(false);
+
+  const filteredInventory = useMemo(() => inventory.filter((r) => inPeriod(r.date, period)), [inventory, period]);
+  const filteredSales     = useMemo(() => sales.filter((r) => inPeriod(r.date, period)), [sales, period]);
+  const filteredCharity   = useMemo(() => charity.filter((r) => inPeriod(r.date, period)), [charity, period]);
+
+  const totalIn     = filteredInventory.filter((r) => r.entry === "In").reduce((s, r) => s + r.qty, 0);
+  const totalOut    = filteredInventory.filter((r) => r.entry === "Out").reduce((s, r) => s + r.qty, 0);
+  const totalOutVal = filteredInventory.filter((r) => r.entry === "Out").reduce((s, r) => s + r.qty * r.cost, 0);
   const balance     = totalIn - totalOut;
-  const totalSales  = sales.reduce((s, r) => s + r.price * r.qty, 0);
-  const totalCharity = charity.reduce((s, r) => s + r.qty, 0);
+  const totalSales  = filteredSales.reduce((s, r) => s + r.price * r.qty, 0);
+  const totalCharity = filteredCharity.reduce((s, r) => s + r.qty, 0);
   const grossProfit  = totalSales - totalOutVal;
 
   const stockMap = useMemo(() => {
     const m = {};
-    inventory.forEach((r) => {
+    filteredInventory.forEach((r) => {
       if (!m[r.variant]) m[r.variant] = { inQty: 0, outQty: 0 };
       if (r.entry === "In") m[r.variant].inQty += r.qty;
       else m[r.variant].outQty += r.qty;
     });
     return m;
-  }, [inventory]);
+  }, [filteredInventory]);
 
   const topProducts = useMemo(() => {
     const rev = {};
-    sales.forEach((r) => { rev[r.item.trim()] = (rev[r.item.trim()] || 0) + r.price * r.qty; });
+    filteredSales.forEach((r) => { rev[r.item.trim()] = (rev[r.item.trim()] || 0) + r.price * r.qty; });
     return Object.entries(rev).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  }, [sales]);
+  }, [filteredSales]);
 
-  // 4 equal metric cards — pastel tinted, circular icon badge, big bold
-  // value, progress bar at the bottom (same visual language as before).
+  const profitData = useMemo(() => {
+    const revMap = {};
+    filteredSales.forEach((r) => { revMap[r.item] = (revMap[r.item] || 0) + r.price * r.qty; });
+    const costMap = {};
+    filteredInventory.filter((r) => r.entry === "Out").forEach((r) => {
+      costMap[r.variant] = (costMap[r.variant] || 0) + r.cost * r.qty;
+    });
+    const allItems = new Set([...Object.keys(revMap), ...Object.keys(costMap)]);
+    return Array.from(allItems)
+      .map((item) => {
+        const revenue = revMap[item] || 0;
+        const cost = costMap[item] || 0;
+        const profit = revenue - cost;
+        const margin = revenue ? (profit / revenue) * 100 : 0;
+        return { item, revenue, cost, profit, margin };
+      })
+      .sort((a, b) => b.profit - a.profit);
+  }, [filteredSales, filteredInventory]);
+
   const metrics = [
     {
       label: "Stock movement",
@@ -56,7 +84,7 @@ export default function DashboardPage({ inventory, sales, charity }) {
     {
       label: "Total sales",
       value: peso(totalSales),
-      sub: `${sales.length} transactions`,
+      sub: `${filteredSales.length} transactions`,
       color: COLORS.amber,
       bg: COLORS.amberBg,
       icon: Wallet,
@@ -65,7 +93,7 @@ export default function DashboardPage({ inventory, sales, charity }) {
     {
       label: "Charity given",
       value: totalCharity,
-      sub: `${charity.length} entries`,
+      sub: `${filteredCharity.length} entries`,
       color: "#e11d48",
       bg: "#ffe4e6",
       icon: HeartHandshake,
@@ -83,13 +111,11 @@ export default function DashboardPage({ inventory, sales, charity }) {
   ];
 
   const paymentStats = REMARKS_LIST.map((r) => {
-    const cnt = sales.filter((s) => s.remarks === r).length;
-    const val = sales.filter((s) => s.remarks === r).reduce((a, s) => a + s.price * s.qty, 0);
+    const cnt = filteredSales.filter((s) => s.remarks === r).length;
+    const val = filteredSales.filter((s) => s.remarks === r).reduce((a, s) => a + s.price * s.qty, 0);
     return { r, cnt, val };
   });
 
-  // Donut chart segments for "Sales by payment type" — one ring slice per
-  // payment remark, sized by its share of total sales value.
   const DONUT_COLORS = ["#2dd4bf", "#f0653f", "#3b82f6", "#c2780b", "#a855f7"];
   const donutTotal = paymentStats.reduce((s, p) => s + p.val, 0) || 1;
   const donutSegments = useMemo(() => {
@@ -101,15 +127,18 @@ export default function DashboardPage({ inventory, sales, charity }) {
       return seg;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sales]);
+  }, [filteredSales]);
 
   const RADIUS = 52;
   const CIRC = 2 * Math.PI * RADIUS;
 
+  const totalProfit  = profitData.reduce((s, p) => s + p.profit, 0);
+  const totalRevenue = profitData.reduce((s, p) => s + p.revenue, 0);
+  const totalCost    = profitData.reduce((s, p) => s + p.cost, 0);
+
   return (
     <div style={S.main}>
 
-      {/* ── Plain greeting, no hero card ── */}
       <div className="pm-welcome-row">
         <h2 className="pm-welcome-title">Welcome, PowerMed!</h2>
 
@@ -119,6 +148,7 @@ export default function DashboardPage({ inventory, sales, charity }) {
             value={period}
             onChange={(e) => setPeriod(e.target.value)}
           >
+            <option>All Time</option>
             <option>This Month</option>
             <option>Last Month</option>
             <option>This Week</option>
@@ -128,12 +158,12 @@ export default function DashboardPage({ inventory, sales, charity }) {
         </div>
       </div>
 
-      {/* ── 4 equal metric cards — pastel tinted, circular icon, bold value ── */}
       <div className="pm-metrics-row">
         {metrics.map((m, i) => {
           const Icon = m.icon;
           return (
-            <div key={i} className="pm-metric-card" style={{ background: m.bg }}>
+            <div key={i} className="pm-metric-card" style={{ background: m.bg, cursor: "pointer" }}
+              onClick={() => m.label === "Gross profit" ? setShowProfit(true) : onNavigate(NAV_MAP[m.label])}>
               <div className="pm-metric-icon" style={{ color: m.color }}>
                 <Icon size={22} strokeWidth={2} />
               </div>
@@ -145,9 +175,8 @@ export default function DashboardPage({ inventory, sales, charity }) {
         })}
       </div>
 
-      {/* ── Bottom: Stock levels + Top products ── */}
       <div className="pm-dash-bottom">
-        <div style={S.card}>
+        <div style={{ ...S.card, cursor: "pointer" }} onClick={() => onNavigate("stock")}>
           <div style={S.cardHdr}>
             <span style={{ ...S.cardTitle, display: "flex", alignItems: "center", gap: 8 }}>
               <Boxes size={17} strokeWidth={2.2} color={COLORS.orange} />
@@ -182,7 +211,7 @@ export default function DashboardPage({ inventory, sales, charity }) {
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          <div className="pm-stats-dark">
+          <div className="pm-stats-dark" style={{ cursor: "pointer" }} onClick={() => onNavigate("sales")}>
             <h3>
               <PieChart size={16} strokeWidth={2.2} />
               Sales by payment type
@@ -221,7 +250,7 @@ export default function DashboardPage({ inventory, sales, charity }) {
             </div>
           </div>
 
-          <div style={S.card}>
+          <div style={{ ...S.card, cursor: "pointer" }} onClick={() => onNavigate("sales")}>
             <div style={S.cardHdr}>
               <span style={{ ...S.cardTitle, display: "flex", alignItems: "center", gap: 8 }}>
                 <BarChart3 size={17} strokeWidth={2.2} color={COLORS.orange} />
@@ -248,6 +277,55 @@ export default function DashboardPage({ inventory, sales, charity }) {
           </div>
         </div>
       </div>
+
+      {showProfit && (
+        <div style={S.modalBg} onClick={(e) => e.target === e.currentTarget && setShowProfit(false)}>
+          <div style={{ ...S.modal, width: 620, maxWidth: "95vw" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 600, color: "#1c1917" }}>Gross profit breakdown</h3>
+              <button onClick={() => setShowProfit(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "#78716c", padding: "2px 6px" }}>
+                ✕
+              </button>
+            </div>
+            <div style={S.tblWrap}>
+              <table style={S.tbl}>
+                <thead>
+                  <tr>
+                    <th style={S.th}>Item</th>
+                    <th style={{ ...S.th, textAlign: "right" }}>Revenue (₱)</th>
+                    <th style={{ ...S.th, textAlign: "right" }}>Cost (₱)</th>
+                    <th style={{ ...S.th, textAlign: "right" }}>Gross Profit (₱)</th>
+                    <th style={{ ...S.th, textAlign: "right" }}>Margin</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {profitData.map((p) => (
+                    <tr key={p.item}>
+                      <td style={S.td}>{p.item}</td>
+                      <td style={S.tdR}>{peso(p.revenue)}</td>
+                      <td style={S.tdR}>{peso(p.cost)}</td>
+                      <td style={{ ...S.tdR, fontWeight: 600, color: p.profit >= 0 ? COLORS.green : COLORS.coral }}>{peso(p.profit)}</td>
+                      <td style={{ ...S.tdR, fontWeight: 600, color: p.margin >= 0 ? COLORS.green : COLORS.coral }}>{p.margin.toFixed(1)}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td style={{ ...S.td, fontWeight: 700 }}>Total</td>
+                    <td style={{ ...S.tdR, fontWeight: 700 }}>{peso(totalRevenue)}</td>
+                    <td style={{ ...S.tdR, fontWeight: 700 }}>{peso(totalCost)}</td>
+                    <td style={{ ...S.tdR, fontWeight: 700, color: totalProfit >= 0 ? COLORS.green : COLORS.coral }}>{peso(totalProfit)}</td>
+                    <td style={{ ...S.tdR, fontWeight: 700, color: totalProfit >= 0 ? COLORS.green : COLORS.coral }}>
+                      {totalRevenue ? ((totalProfit / totalRevenue) * 100).toFixed(1) : 0}%
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
