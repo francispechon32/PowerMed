@@ -48,7 +48,7 @@
 ═══════════════════════════════════════════════════════ */
 
 .pm-sidebar {
-  width: 80px;                          /* collapsed width */
+  width: 80px;
   flex-shrink: 0;
   background: linear-gradient(180deg, var(--pm-orange) 0%, var(--pm-orange-dark) 100%);
   display: flex;
@@ -128,7 +128,7 @@
   flex: 1;
 }
 
-/* ── Nav item (the <button>) ── */
+/* ── Nav item ── */
 
 .pm-nav-item {
   position: relative;
@@ -140,12 +140,12 @@
   font-family: inherit;
 }
 
-/* ── Nav link (the inner <span>) ── */
+/* ── Nav link ── */
 
 .pm-nav-link {
   display: flex;
   align-items: center;
-  justify-content: center;       /* centered when collapsed */
+  justify-content: center;
   width: 100%;
   height: 50px;
   color: rgba(255,255,255,0.68);
@@ -157,7 +157,6 @@
     width       0.18s ease;
 }
 
-/* SVG inside nav link — always 20×20, never grows */
 .pm-nav-link svg {
   width: 20px;
   height: 20px;
@@ -212,7 +211,7 @@
   box-shadow: 7px -7px 0 7px var(--pm-bg);
 }
 
-/* ── Nav label (hidden when collapsed) ── */
+/* ── Nav label ── */
 
 .pm-nav-label {
   font-size: 13px;
@@ -231,7 +230,7 @@
   pointer-events: auto;
 }
 
-/* ── Expanded mode: left-align everything ── */
+/* ── Expanded mode ── */
 
 .pm-sidebar--open .pm-nav-link {
   justify-content: flex-start;
@@ -386,7 +385,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════
-   DASHBOARD LAYOUT
+   DASHBOARD TOP — Hero + Stock Movement side by side
 ═══════════════════════════════════════════════════════ */
 
 .pm-dash-top {
@@ -394,11 +393,75 @@
   grid-template-columns: 1.4fr 1fr;
   gap: 18px;
   margin-bottom: 18px;
+  align-items: stretch;
 }
 
 @media (max-width: 900px) {
   .pm-dash-top { grid-template-columns: 1fr; }
 }
+
+/* ── Plain welcome heading (replaces the hero card) ── */
+
+.pm-welcome-title {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--pm-text);
+  margin: 0;
+}
+
+.pm-welcome-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 6px 0 20px;
+  flex-wrap: wrap;
+}
+
+/* ── "This Month" period dropdown ── */
+
+.pm-period-select-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.pm-period-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: var(--pm-surface);
+  border: none;
+  border-radius: 999px;
+  padding: 10px 38px 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--pm-text);
+  box-shadow: var(--pm-shadow-card);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.pm-period-select:hover { background: #f5f5f4; }
+
+.pm-period-select:focus {
+  outline: 2px solid var(--pm-orange-soft);
+  outline-offset: 1px;
+}
+
+.pm-period-chevron {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--pm-text-muted);
+  pointer-events: none;
+}
+
+/* ── Hero card ── */
 
 .pm-hero-card {
   background: linear-gradient(135deg, var(--pm-orange) 0%, #f97316 55%, var(--pm-orange-muted) 100%);
@@ -430,50 +493,158 @@
   line-height: 1.5;
 }
 
-.pm-hero-emoji {
-  font-size: 72px;
-  line-height: 1;
-  filter: drop-shadow(0 8px 16px rgba(0,0,0,0.12));
-}
-
-.pm-invite-card {
-  background: var(--pm-surface);
-  border-radius: var(--pm-radius-lg);
-  padding: 24px 26px;
-  box-shadow: var(--pm-shadow-card);
+.pm-hero-icon-wrap {
+  width: 86px;
+  height: 86px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.16);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  justify-content: center;
+  color: #fff;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.28),
+    0 10px 24px rgba(0,0,0,0.14);
 }
 
-.pm-invite-card h3 { margin: 0 0 6px; font-size: 16px; font-weight: 600; }
-.pm-invite-card p  { margin: 0; font-size: 13px; color: var(--pm-text-muted); }
+/* ═══════════════════════════════════════════════════════
+   STOCK MOVEMENT — top-right card
+═══════════════════════════════════════════════════════ */
 
-/* ── Metric cards ── */
+.pm-stock-top-card {
+  background: var(--pm-surface);
+  border-radius: var(--pm-radius-lg);
+  padding: 22px 24px 20px;
+  box-shadow: var(--pm-shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.pm-stock-top-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 36px rgba(28,25,23,0.10), 0 4px 12px rgba(28,25,23,0.05);
+}
+
+.pm-stock-top-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.pm-stock-top-header .pm-metric-icon {
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+
+.pm-stock-top-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--pm-text);
+  line-height: 1.2;
+}
+
+.pm-stock-top-sub {
+  font-size: 12px;
+  color: var(--pm-text-muted);
+  margin-top: 2px;
+}
+
+/* ── Shared stock stats grid (reused in top card) ── */
+
+.pm-stock-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.pm-stock-stat {
+  background: var(--pm-bg);
+  border-radius: 10px;
+  padding: 10px 12px;
+  text-align: center;
+}
+
+.pm-stock-stat-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--pm-text-muted);
+  margin-bottom: 4px;
+}
+
+.pm-stock-stat-val {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.pm-stock-stat-sub {
+  font-size: 10px;
+  color: var(--pm-text-muted);
+  margin-top: 3px;
+}
+
+/* ── Shared progress bars (reused in top card) ── */
+
+.pm-stock-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.pm-stock-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pm-stock-bar-row span {
+  font-size: 10px;
+  color: var(--pm-text-muted);
+  width: 24px;
+  flex-shrink: 0;
+}
+
+.pm-stock-bar-row .pm-progress { flex: 1; }
+
+/* ═══════════════════════════════════════════════════════
+   METRIC CARDS ROW — 3 equal cards
+═══════════════════════════════════════════════════════ */
 
 .pm-metrics-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   margin-bottom: 18px;
 }
 
+/* ── Base metric card ── */
+
 .pm-metric-card {
   background: var(--pm-surface);
   border-radius: var(--pm-radius-md);
-  padding: 18px 18px 16px;
-  box-shadow: var(--pm-shadow-card);
+  padding: 22px 22px 20px;
+  box-shadow: 0 8px 22px rgba(28,25,23,0.05);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.pm-metric-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 36px rgba(28,25,23,0.10), 0 4px 12px rgba(28,25,23,0.05);
 }
 
 .pm-metric-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 17px;
   margin-bottom: 12px;
 }
 
@@ -507,7 +678,52 @@
 
 .pm-progress-bar { height: 100%; border-radius: 999px; }
 
-/* ── Dashboard bottom grid ── */
+/* ── Pastel "metric card" look, matching the reference dashboard ──
+   Scoped to .pm-metric-card so the stock-movement card and stock
+   stats (which reuse the base classes above) are left untouched. ── */
+
+.pm-metric-card .pm-metric-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.55);
+  box-shadow: 0 4px 10px rgba(28,25,23,0.07);
+  margin-bottom: 16px;
+}
+
+.pm-metric-card .pm-metric-label {
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--pm-text);
+  opacity: 0.72;
+  margin-bottom: 14px;
+}
+
+.pm-metric-card .pm-metric-value {
+  font-size: 34px;
+  font-weight: 800;
+  color: var(--pm-text);
+  margin-bottom: 2px;
+}
+
+.pm-metric-card .pm-metric-sub {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pm-text);
+  opacity: 0.6;
+  margin-bottom: 0;
+}
+
+.pm-metric-card .pm-progress {
+  height: 7px;
+  background: rgba(255,255,255,0.55);
+}
+
+/* ═══════════════════════════════════════════════════════
+   DASHBOARD BOTTOM
+═══════════════════════════════════════════════════════ */
 
 .pm-dash-bottom {
   display: grid;
@@ -534,7 +750,14 @@ table tbody tr:hover { background: #fafaf9; }
   box-shadow: 0 16px 40px rgba(124,45,18,0.25);
 }
 
-.pm-stats-dark h3 { margin: 0 0 18px; font-size: 15px; font-weight: 600; }
+.pm-stats-dark h3 {
+  margin: 0 0 18px;
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
 .pm-stats-list { display: flex; flex-direction: column; gap: 14px; }
 
@@ -548,9 +771,53 @@ table tbody tr:hover { background: #fafaf9; }
 
 .pm-stats-item strong { font-size: 18px; font-weight: 700; opacity: 1; }
 
+/* ── Donut chart + legend (Sales by payment type) ── */
+
+.pm-donut-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.pm-donut-svg { flex-shrink: 0; }
+
+.pm-donut-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pm-donut-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  opacity: 0.92;
+}
+
+.pm-donut-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
 /* ═══════════════════════════════════════════════════════
-   MOBILE
+   RESPONSIVE
 ═══════════════════════════════════════════════════════ */
+
+@media (max-width: 900px) {
+  .pm-metrics-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .pm-metrics-row {
+    grid-template-columns: 1fr;
+  }
+}
 
 @media (max-width: 768px) {
   .pm-app {
