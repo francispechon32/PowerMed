@@ -1,13 +1,15 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { COLORS, S } from "../styles/tokens";
 import { peso, inRange, fmtDateShort } from "../utils/helpers";
 import { Calendar, IconChevron } from "../components/Icons";
+import Pagination, { PER_PAGE } from "../components/Pagination";
 
 export default function StockPage({ inventory }) {
   const [dateRange, setDateRange] = useState({ start: "", end: "" });
   const [showPicker, setShowPicker] = useState(false);
   const [draftStart, setDraftStart] = useState("");
-  const [draftEnd, setDraftEnd] = useState("");
+  const [draftEnd, setDraftEnd]     = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const filtered = useMemo(() => inventory.filter((r) => inRange(r.date, dateRange.start, dateRange.end)), [inventory, dateRange]);
 
@@ -21,20 +23,24 @@ export default function StockPage({ inventory }) {
     return m;
   }, [filtered]);
 
+  const stockEntries = Object.entries(stockMap);
+
+  useEffect(() => { setCurrentPage(1); }, [dateRange]);
+
+  const totalPages = Math.max(1, Math.ceil(stockEntries.length / PER_PAGE));
+  const paged      = stockEntries.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
+
   return (
     <div style={S.main}>
+      <div style={S.pageHdr}>
+        <h2 style={S.pageTitle}>Stock summary by product</h2>
+      </div>
       <div style={{ ...S.card, overflow: "visible" }}>
         <div style={S.cardHdr}>
-          <span style={S.cardTitle}>📊 Stock summary by product</span>
           <div style={{ position: "relative" }}>
-            <button onClick={() => { setDraftStart(dateRange.start || ""); setDraftEnd(dateRange.end || ""); setShowPicker(true); }}
-              style={{
-                display: "flex", alignItems: "center", gap: 6,
-                padding: "8px 14px", height: 36, border: "none",
-                borderRadius: 999, background: "#f5f5f4", color: "#1c1917",
-                fontFamily: "inherit", fontSize: 12, cursor: "pointer",
-                whiteSpace: "nowrap",
-              }}>
+            <button
+              className="pm-period-pill"
+              onClick={() => { setDraftStart(dateRange.start || ""); setDraftEnd(dateRange.end || ""); setShowPicker(true); }}>
               <Calendar size={15} strokeWidth={2} />
               <span>{dateRange.start ? `${fmtDateShort(dateRange.start)} – ${fmtDateShort(dateRange.end)}` : "All dates"}</span>
               {dateRange.start ? (
@@ -88,7 +94,7 @@ export default function StockPage({ inventory }) {
               </tr>
             </thead>
             <tbody>
-              {Object.entries(stockMap).map(([k, v]) => {
+              {paged.map(([k, v]) => {
                 const bQty = v.inQty  - v.outQty;
                 const bVal = v.inVal  - v.outVal;
                 const status = bQty <= 0 ? "Empty" : bQty <= 2 ? "Low" : "OK";
@@ -112,9 +118,13 @@ export default function StockPage({ inventory }) {
                   </tr>
                 );
               })}
+              {paged.length === 0 && (
+                <tr><td colSpan={8} style={S.empty}>No stock data for selected range.</td></tr>
+              )}
             </tbody>
           </table>
         </div>
+        <Pagination page={currentPage} totalPages={totalPages} total={stockEntries.length} perPage={PER_PAGE} onPageChange={setCurrentPage} />
       </div>
     </div>
   );

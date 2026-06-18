@@ -7,6 +7,7 @@ import InventoryPage from "./pages/InventoryPage";
 import SalesPage     from "./pages/SalesPage";
 import CharityPage   from "./pages/CharityPage";
 import StockPage     from "./pages/StockPage";
+import powerMedLogo  from "./assets/powermed-logo.png";
 
 const PAGES = [
   { key: "dashboard", label: "Dashboard" },
@@ -35,7 +36,9 @@ export default function App() {
             onClick={() => setSidebarOpen((o) => !o)}
             aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
           >
-            <div className="pm-sidebar-logo">⚗</div>
+            <div className="pm-sidebar-logo">
+              <img src={powerMedLogo} alt="PowerMed" />
+            </div>
             <span>PowerMed</span>
           </button>
 
