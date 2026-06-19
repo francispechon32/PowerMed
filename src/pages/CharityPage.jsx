@@ -1,12 +1,16 @@
 import { useState, useMemo, useEffect } from "react";
 import { COLORS, S } from "../styles/tokens";
 import { peso, fmtDate } from "../utils/helpers";
+import { PRODUCTS } from "../data/seeds";
 import { Pill } from "../components/Badge";
 import Modal from "../components/Modal";
-import { HeartHandshake, Wallet, TrendingUp, BarChart3 } from "../components/Icons";
+import { HeartHandshake, Wallet, TrendingUp, BarChart3, Download } from "../components/Icons";
 import Pagination, { PER_PAGE } from "../components/Pagination";
+import { exportCsv } from "../utils/exportCsv";
 
-export default function CharityPage({ charity, setCharity, search: headerSearch }) {
+export default function CharityPage({ charity, setCharity, search: headerSearch, products: propProducts, onAddToast }) {
+  const products = propProducts || PRODUCTS;
+
   const [search, setSearch]   = useState("");
   const [modal, setModal]     = useState(false);
   const [editRow, setEditRow] = useState(null);
@@ -35,13 +39,39 @@ export default function CharityPage({ charity, setCharity, search: headerSearch 
       setCharity((prev) => [row, ...prev]);
     }
   };
+
+  const handleDelete = (id, item) => {
+    setCharity((prev) => prev.filter((r) => r.id !== id));
+    onAddToast && onAddToast(`Deleted charity entry for "${item.beneficiary}"`, () => {
+      setCharity((prev) => [item, ...prev]);
+    });
+  };
+
   const openAdd  = () => { setEditRow(null); setModal(true); };
   const openEdit = (r) => { setEditRow(r); setModal(true); };
   const handleClose = () => { setEditRow(null); setModal(false); };
 
+  const handleExport = () => {
+    exportCsv(
+      "charity.csv",
+      ["Date","Beneficiary","Item","Cost","Qty","Amount"],
+      filtered.map((r) => [r.date, r.beneficiary, r.item, r.cost, r.qty, r.qty * r.cost])
+    );
+  };
+
   return (
     <div style={S.main}>
-      {modal && <Modal key={editRow?.id ?? "new"} type="charity" editData={editRow} onClose={handleClose} onSave={handleSave} />}
+      {modal && (
+        <Modal
+          key={editRow?.id ?? "new"}
+          type="charity"
+          editData={editRow}
+          onClose={handleClose}
+          onSave={handleSave}
+          onDelete={handleDelete}
+          products={products}
+        />
+      )}
       <div className="pm-metrics-row">
         {[
           { label: "Total units given",  value: totalQty,                                               sub: "Units distributed",  color: "#e11d48",    bg: "#ffe4e6",       icon: HeartHandshake },
@@ -68,6 +98,9 @@ export default function CharityPage({ charity, setCharity, search: headerSearch 
         <div style={S.cardHdr}>
           <div style={S.searchRow}>
             <input style={{ ...S.inputSm, width: 180 }} placeholder="Beneficiary / item…" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <button style={{ ...S.addBtn, background: "#f5f5f4", color: "#44403c", boxShadow: "none" }} onClick={handleExport}>
+              <Download size={14} /> Export
+            </button>
             <button style={S.addBtn} onClick={openAdd}>＋ Add entry</button>
           </div>
         </div>

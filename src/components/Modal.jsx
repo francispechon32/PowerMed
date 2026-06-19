@@ -2,16 +2,24 @@ import { useState } from "react";
 import { PRODUCTS, CUSTOMERS, REMARKS_LIST, CO_LIST, INCLUSIVES_LIST } from "../data/seeds";
 import { nextId } from "../utils/helpers";
 import { S } from "../styles/tokens";
+import { Trash } from "./Icons";
 
-const EMPTY_INV     = { date: "", variant: "", cost: "", qty: "", entry: "In" };
+const EMPTY_INV     = { date: "", variant: "", cost: "", qty: "", entry: "In", batchNo: "", expiryDate: "" };
 const EMPTY_SALE    = { date: "", customer: "", item: "", price: "", qty: "", remarks: "SD", co: "HR", inclusives: [] };
 const EMPTY_CHARITY = { date: "", beneficiary: "", item: "", cost: "", qty: "" };
 
-export default function Modal({ type, onClose, onSave, editData }) {
+export default function Modal({ type, onClose, onSave, onDelete, editData, products: propProducts, customers: propCustomers }) {
+  const products  = propProducts  || PRODUCTS;
+  const customers = propCustomers || CUSTOMERS;
+
   const [form, setForm] = useState(() =>
-    editData ? { ...editData } : type === "inv" ? { ...EMPTY_INV } : type === "sales" ? { ...EMPTY_SALE } : { ...EMPTY_CHARITY }
+    editData
+      ? { ...editData }
+      : type === "inv" ? { ...EMPTY_INV } : type === "sales" ? { ...EMPTY_SALE } : { ...EMPTY_CHARITY }
   );
   const [customInc, setCustomInc] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const today = new Date().toISOString().split("T")[0];
   const isEdit = !!editData;
@@ -47,7 +55,13 @@ export default function Modal({ type, onClose, onSave, editData }) {
     onClose();
   };
 
-  const inp = (label, key, type = "text", opts = null) => (
+  const handleDelete = () => {
+    if (!confirmDelete) { setConfirmDelete(true); return; }
+    onDelete && onDelete(editData.id, editData);
+    onClose();
+  };
+
+  const inp = (label, key, type = "text", opts = null, placeholder = "") => (
     <div style={S.formRow}>
       <label style={S.formLbl}>{label}</label>
       {opts ? (
@@ -56,8 +70,8 @@ export default function Modal({ type, onClose, onSave, editData }) {
           {opts.map((o) => <option key={o} value={o}>{o}</option>)}
         </select>
       ) : (
-        <input style={S.formInp} type={type} value={form[key]} onChange={(e) => set(key, e.target.value)}
-          placeholder={type === "date" ? today : ""} />
+        <input style={S.formInp} type={type} value={form[key] ?? ""} onChange={(e) => set(key, e.target.value)}
+          placeholder={type === "date" ? today : placeholder} />
       )}
     </div>
   );
@@ -75,7 +89,7 @@ export default function Modal({ type, onClose, onSave, editData }) {
 
         {type === "inv" && (<>
           {inp("Date", "date", "date")}
-          {inp("Variant", "variant", "text", PRODUCTS)}
+          {inp("Variant", "variant", "text", products)}
           {inp("Cost (₱)", "cost", "number")}
           {inp("Qty", "qty", "number")}
           <div style={S.formRow}>
@@ -85,12 +99,16 @@ export default function Modal({ type, onClose, onSave, editData }) {
               <option value="Out">Out</option>
             </select>
           </div>
+          {form.entry === "In" && (<>
+            {inp("Batch No. (optional)", "batchNo", "text", null, "e.g. BT-2026-001")}
+            {inp("Expiry Date (optional)", "expiryDate", "date")}
+          </>)}
         </>)}
 
         {type === "sales" && (<>
           {inp("Date", "date", "date")}
-          {inp("Customer", "customer", "text", CUSTOMERS)}
-          {inp("Item", "item", "text", PRODUCTS)}
+          {inp("Customer", "customer", "text", customers)}
+          {inp("Item", "item", "text", products)}
           {inp("Price (₱)", "price", "number")}
           {inp("Qty", "qty", "number")}
           <div style={S.formRow}>
@@ -129,10 +147,7 @@ export default function Modal({ type, onClose, onSave, editData }) {
                   }}>
                     {inc}
                     <button type="button" onClick={() => removeInc(inc)}
-                      style={{
-                        background: "none", border: "none", cursor: "pointer",
-                        fontSize: 14, lineHeight: 1, color: "#9a3412", padding: 0,
-                      }}>×</button>
+                      style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, lineHeight: 1, color: "#9a3412", padding: 0 }}>×</button>
                   </span>
                 ))}
               </div>
@@ -155,14 +170,32 @@ export default function Modal({ type, onClose, onSave, editData }) {
         {type === "charity" && (<>
           {inp("Date", "date", "date")}
           {inp("Beneficiary", "beneficiary")}
-          {inp("Item", "item", "text", PRODUCTS)}
+          {inp("Item", "item", "text", products)}
           {inp("Cost (₱)", "cost", "number")}
           {inp("Qty", "qty", "number")}
         </>)}
 
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
-          <button style={S.btnSecondary} onClick={onClose}>Cancel</button>
-          <button style={S.btnPrimary} onClick={handleSave}>Save entry</button>
+        <div style={{ display: "flex", gap: 8, justifyContent: "space-between", marginTop: 16, alignItems: "center" }}>
+          <div>
+            {isEdit && onDelete && (
+              confirmDelete ? (
+                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  <span style={{ fontSize: 12, color: "#dc2626" }}>Confirm delete?</span>
+                  <button style={{ ...S.btnSecondary, padding: "6px 12px", fontSize: 12, color: "#dc2626" }} onClick={handleDelete}>Yes, delete</button>
+                  <button style={{ ...S.btnSecondary, padding: "6px 12px", fontSize: 12 }} onClick={() => setConfirmDelete(false)}>Cancel</button>
+                </div>
+              ) : (
+                <button style={{ ...S.btnSecondary, padding: "8px 14px", fontSize: 12, display: "flex", alignItems: "center", gap: 6, color: "#dc2626" }}
+                  onClick={handleDelete}>
+                  <Trash size={14} color="#dc2626" /> Delete
+                </button>
+              )
+            )}
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button style={S.btnSecondary} onClick={onClose}>Cancel</button>
+            <button style={S.btnPrimary} onClick={handleSave}>Save entry</button>
+          </div>
         </div>
       </div>
     </div>

@@ -6,14 +6,18 @@ import { Badge } from "../components/Badge";
 import Modal from "../components/Modal";
 import Pagination, { PER_PAGE } from "../components/Pagination";
 import SelectDropdown from "../components/SelectDropdown";
+import { Download } from "../components/Icons";
+import { exportCsv } from "../utils/exportCsv";
 
 const ENTRY_OPTIONS = [
   { value: "In", label: "In" },
   { value: "Out", label: "Out" },
 ];
-const PRODUCT_OPTIONS = PRODUCTS.map((p) => ({ value: p, label: p }));
 
-export default function InventoryPage({ inventory, setInventory, search: headerSearch }) {
+export default function InventoryPage({ inventory, setInventory, search: headerSearch, products: propProducts, onAddToast }) {
+  const products = propProducts || PRODUCTS;
+  const PRODUCT_OPTIONS = products.map((p) => ({ value: p, label: p }));
+
   const [search, setSearch]     = useState("");
   const [entryF, setEntryF]     = useState("");
   const [productF, setProductF] = useState("");
@@ -43,13 +47,42 @@ export default function InventoryPage({ inventory, setInventory, search: headerS
       setInventory((prev) => [row, ...prev]);
     }
   };
+
+  const handleDelete = (id, item) => {
+    setInventory((prev) => prev.filter((r) => r.id !== id));
+    onAddToast && onAddToast(`Deleted "${item.variant}" entry`, () => {
+      setInventory((prev) => [item, ...prev]);
+    });
+  };
+
   const openAdd  = () => { setEditRow(null); setModal(true); };
   const openEdit = (r) => { setEditRow(r); setModal(true); };
   const handleClose = () => { setEditRow(null); setModal(false); };
 
+  const handleExport = () => {
+    exportCsv(
+      "inventory.csv",
+      ["Date", "Variant", "Cost", "Qty", "Amount", "Entry", "Batch No", "Expiry Date"],
+      filtered.map((r) => [
+        r.date, r.variant, r.cost, r.qty, r.qty * r.cost, r.entry,
+        r.batchNo || "", r.expiryDate || "",
+      ])
+    );
+  };
+
   return (
     <div style={S.main}>
-      {modal && <Modal key={editRow?.id ?? "new"} type="inv" editData={editRow} onClose={handleClose} onSave={handleSave} />}
+      {modal && (
+        <Modal
+          key={editRow?.id ?? "new"}
+          type="inv"
+          editData={editRow}
+          onClose={handleClose}
+          onSave={handleSave}
+          onDelete={handleDelete}
+          products={products}
+        />
+      )}
       <div style={S.pageHdr}>
         <h2 style={S.pageTitle}>Inventory log</h2>
       </div>
@@ -59,6 +92,9 @@ export default function InventoryPage({ inventory, setInventory, search: headerS
             <input style={{ ...S.inputSm, width: 140 }} placeholder="Search…" value={search} onChange={(e) => { setSearch(e.target.value); }} />
             <SelectDropdown value={entryF} onChange={setEntryF} options={ENTRY_OPTIONS} placeholder="All entries" />
             <SelectDropdown value={productF} onChange={setProductF} options={PRODUCT_OPTIONS} placeholder="All products" />
+            <button style={{ ...S.addBtn, background: "#f5f5f4", color: "#44403c", boxShadow: "none" }} onClick={handleExport}>
+              <Download size={14} /> Export
+            </button>
             <button style={S.addBtn} onClick={openAdd}>＋ Add entry</button>
           </div>
         </div>
@@ -66,7 +102,7 @@ export default function InventoryPage({ inventory, setInventory, search: headerS
           <table style={S.tbl}>
             <thead>
               <tr>
-                {["Date","Variant","Cost","Qty","Amount","Entry"].map((h, i) => (
+                {["Date","Variant","Cost","Qty","Amount","Entry","Batch","Expiry"].map((h, i) => (
                   <th key={h} style={{ ...S.th, textAlign: i >= 2 && i <= 4 ? "right" : "left" }}>{h}</th>
                 ))}
               </tr>
@@ -80,9 +116,13 @@ export default function InventoryPage({ inventory, setInventory, search: headerS
                   <td style={S.tdR}>{r.qty}</td>
                   <td style={S.tdR}>{peso(r.qty * r.cost)}</td>
                   <td style={S.td}><Badge label={r.entry} /></td>
+                  <td style={{ ...S.td, color: "#78716c", fontSize: 11 }}>{r.batchNo || "—"}</td>
+                  <td style={{ ...S.td, fontSize: 11, color: r.expiryDate && new Date(r.expiryDate) < new Date(Date.now() + 30 * 86400000) ? "#dc2626" : "#78716c" }}>
+                    {r.expiryDate ? fmtDate(r.expiryDate) : "—"}
+                  </td>
                 </tr>
               )) : (
-                <tr><td colSpan={6} style={S.empty}>No entries match your filter.</td></tr>
+                <tr><td colSpan={8} style={S.empty}>No entries match your filter.</td></tr>
               )}
             </tbody>
           </table>
