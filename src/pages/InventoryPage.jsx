@@ -56,7 +56,14 @@ export default function InventoryPage({ inventory, setInventory, search: headerS
   };
 
   const openAdd  = () => { setEditRow(null); setModal(true); };
-  const openEdit = (r) => { setEditRow(r); setModal(true); };
+  const openEdit = (r) => {
+    if (r.autoFrom) {
+      alert(`This entry is auto-linked to a ${r.autoFrom.type} record. Edit or delete it from the ${r.autoFrom.type === "sale" ? "Sales" : "Charity"} page instead — changes will sync here automatically.`);
+      return;
+    }
+    setEditRow(r);
+    setModal(true);
+  };
   const handleClose = () => { setEditRow(null); setModal(false); };
 
   const handleExport = () => {
@@ -109,9 +116,16 @@ export default function InventoryPage({ inventory, setInventory, search: headerS
             </thead>
             <tbody>
               {paged.length ? paged.map((r) => (
-                <tr key={r.id} onClick={() => openEdit(r)} style={{ cursor: "pointer" }}>
+                <tr key={r.id} onClick={() => openEdit(r)} style={{ cursor: "pointer", opacity: r.autoFrom ? 0.7 : 1 }}>
                   <td style={S.td}>{fmtDate(r.date)}</td>
-                  <td style={S.td}>{r.variant}</td>
+                  <td style={S.td}>
+                    {r.variant}
+                    {r.autoFrom && (
+                      <span style={{ marginLeft: 6, fontSize: 9, fontWeight: 700, color: "#a8a29e", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                        · auto ({r.autoFrom.type})
+                      </span>
+                    )}
+                  </td>
                   <td style={S.tdR}>{peso(r.cost)}</td>
                   <td style={S.tdR}>{r.qty}</td>
                   <td style={S.tdR}>{peso(r.qty * r.cost)}</td>

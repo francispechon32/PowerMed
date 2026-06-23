@@ -71,8 +71,16 @@ export default function StockPage({ inventory, search }) {
                 className="pm-period-pill"
                 onClick={() => { setDraftStart(dateRange.start || ""); setDraftEnd(dateRange.end || ""); setShowPicker(true); }}>
                 <Calendar size={15} strokeWidth={2} />
-                <span>{dateRange.start ? `${fmtDateShort(dateRange.start)} – ${fmtDateShort(dateRange.end)}` : "All dates"}</span>
-                {dateRange.start ? (
+                <span>
+                  {dateRange.start && dateRange.end
+                    ? `${fmtDateShort(dateRange.start)} – ${fmtDateShort(dateRange.end)}`
+                    : dateRange.start
+                    ? `From ${fmtDateShort(dateRange.start)}`
+                    : dateRange.end
+                    ? `Until ${fmtDateShort(dateRange.end)}`
+                    : "All dates"}
+                </span>
+                {(dateRange.start || dateRange.end) ? (
                   <span onClick={(e) => { e.stopPropagation(); setDateRange({ start: "", end: "" }); }}
                     style={{ marginLeft: 4, color: "#a8a29e", fontSize: 14, lineHeight: 1 }}>✕</span>
                 ) : <IconChevron size={14} strokeWidth={2.2} />}
@@ -81,21 +89,21 @@ export default function StockPage({ inventory, search }) {
                 <>
                   <div style={{ position: "fixed", inset: 0, zIndex: 49 }} onClick={() => setShowPicker(false)} />
                   <div style={{
-                    position: "absolute", top: "100%", right: 0, marginTop: 6, zIndex: 50,
+                    position: "absolute", top: "100%", left: 0, marginTop: 6, zIndex: 50,
                     background: "#fff", borderRadius: 16, padding: 16,
                     boxShadow: "0 10px 30px rgba(28,25,23,0.12), 0 2px 8px rgba(28,25,23,0.06)",
                     display: "flex", flexDirection: "column", gap: 10, minWidth: 250,
                   }}>
-                    <div style={{ display: "flex", gap: 10 }}>
-                      <div>
+                    <div>
+                      <div style={{ marginBottom: 12 }}>
                         <label style={{ display: "block", fontSize: 11, color: "#78716c", marginBottom: 4, fontWeight: 600 }}>From</label>
                         <input type="date" value={draftStart} onChange={(e) => setDraftStart(e.target.value)}
-                          style={{ padding: "8px 10px", borderRadius: 10, border: "1px solid #e5e5e5", fontSize: 12, fontFamily: "inherit", color: "#1c1917", background: "#fff", outline: "none", width: 140 }} />
+                          style={{ padding: "8px 10px", borderRadius: 10, border: "1px solid #e5e5e5", fontSize: 12, fontFamily: "inherit", color: "#1c1917", background: "#fff", outline: "none", width: 180 }} />
                       </div>
                       <div>
                         <label style={{ display: "block", fontSize: 11, color: "#78716c", marginBottom: 4, fontWeight: 600 }}>To</label>
                         <input type="date" value={draftEnd} onChange={(e) => setDraftEnd(e.target.value)}
-                          style={{ padding: "8px 10px", borderRadius: 10, border: "1px solid #e5e5e5", fontSize: 12, fontFamily: "inherit", color: "#1c1917", background: "#fff", outline: "none", width: 140 }} />
+                          style={{ padding: "8px 10px", borderRadius: 10, border: "1px solid #e5e5e5", fontSize: 12, fontFamily: "inherit", color: "#1c1917", background: "#fff", outline: "none", width: 180 }} />
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 4 }}>

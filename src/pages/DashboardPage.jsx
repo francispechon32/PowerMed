@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef, useLayoutEffect } from "react";
 import {
   PackagePlus, Wallet, HeartHandshake, TrendingUp,
   Boxes, BarChart3, PieChart, IconChevron, Calendar, CreditCard,
@@ -89,6 +89,21 @@ export default function DashboardPage({ inventory, sales, charity, onNavigate, s
   const [period, setPeriod] = useState("All Time");
   const [showProfit, setShowProfit] = useState(false);
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
+  const rightColRef = useRef(null);
+  const [rightColH, setRightColH] = useState(null);
+
+  // Keep the "Stock levels" card the same height as the right-hand column
+  // (donut + C/O breakdown + top products), so it scrolls internally
+  // instead of growing past it when there are many products.
+  useLayoutEffect(() => {
+    const el = rightColRef.current;
+    if (!el) return;
+    const update = () => setRightColH(el.offsetHeight);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const PERIOD_OPTIONS = ["Today", "This Week", "This Month", "Last Month", "This Year", "All Time"];
 
@@ -257,7 +272,7 @@ export default function DashboardPage({ inventory, sales, charity, onNavigate, s
 
       <div className="pm-dash-bottom">
         {/* Stock levels */}
-        <div style={{ ...S.card, cursor: "pointer", display: "flex", flexDirection: "column", maxHeight: 580, overflow: "hidden" }} onClick={() => onNavigate("stock")}>
+        <div style={{ ...S.card, cursor: "pointer", display: "flex", flexDirection: "column", overflow: "hidden", maxHeight: rightColH || undefined }} onClick={() => onNavigate("stock")}>
           <div style={{ ...S.cardHdr, display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
             <span style={{ ...S.cardTitle, display: "flex", alignItems: "center", gap: 8 }}>
               <Boxes size={17} strokeWidth={2.2} color={COLORS.orange} /> Stock levels
@@ -299,7 +314,7 @@ export default function DashboardPage({ inventory, sales, charity, onNavigate, s
         </div>
 
         {/* Right column */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+        <div ref={rightColRef} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
           {/* Sales by payment type */}
           <div className="pm-stats-dark" style={{ cursor: "pointer" }} onClick={() => onNavigate("sales")}>
             <h3><PieChart size={16} strokeWidth={2.2} color={COLORS.orange} /> Sales by payment type</h3>

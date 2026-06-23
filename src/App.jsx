@@ -207,10 +207,10 @@ export default function App() {
               <InventoryPage inventory={inventory} setInventory={setInventory} search={search} products={products} onAddToast={addToast} />
             )}
             {page === "sales" && (
-              <SalesPage sales={sales} setSales={setSales} search={search} products={products} customers={customers} onAddToast={addToast} />
+              <SalesPage sales={sales} setSales={setSales} inventory={inventory} setInventory={setInventory} search={search} products={products} customers={customers} onAddToast={addToast} />
             )}
             {page === "charity" && (
-              <CharityPage charity={charity} setCharity={setCharity} search={search} products={products} onAddToast={addToast} />
+              <CharityPage charity={charity} setCharity={setCharity} inventory={inventory} setInventory={setInventory} search={search} products={products} onAddToast={addToast} />
             )}
             {page === "stock" && (
               <StockPage inventory={inventory} search={search} />

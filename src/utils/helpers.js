@@ -70,9 +70,11 @@ export function inPrevPeriod(dateStr, period) {
 }
 
 export function inRange(dateStr, start, end) {
-  if (!start || !end) return true;
+  if (!start && !end) return true;
   const d = new Date(dateStr + "T00:00:00");
-  return d >= new Date(start + "T00:00:00") && d <= new Date(end + "T00:00:00");
+  if (start && d < new Date(start + "T00:00:00")) return false;
+  if (end && d > new Date(end + "T00:00:00")) return false;
+  return true;
 }
 
 export const fmtDateShort = (d) => {
@@ -98,3 +100,20 @@ export const getGreeting = () => {
 };
 
 export const nextId = () => Date.now() + Math.floor(Math.random() * 1000);
+
+// --- Stock helpers (single source of truth = Inventory ledger) ---
+
+// Current on-hand balance for a variant, based only on Inventory In/Out rows.
+export function getStockBalance(inventory, variant) {
+  return inventory.reduce((bal, r) => {
+    if (r.variant !== variant) return bal;
+    return bal + (r.entry === "In" ? r.qty : -r.qty);
+  }, 0);
+}
+
+// Most recent unit cost recorded for a variant (used to auto-cost Sales/Charity
+// deductions, since those forms only capture price/cost-to-beneficiary, not unit cost).
+export function getLatestCost(inventory, variant) {
+  const rows = inventory.filter((r) => r.variant === variant).sort((a, b) => a.date.localeCompare(b.date));
+  return rows.length ? rows[rows.length - 1].cost : 0;
+}

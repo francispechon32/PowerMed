@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { PRODUCTS, CUSTOMERS, REMARKS_LIST, CO_LIST } from "../data/seeds";
-import { peso, fmtDate } from "../utils/helpers";
+import { peso, fmtDate, nextId, getStockBalance, getLatestCost } from "../utils/helpers";
 import { COLORS, S } from "../styles/tokens";
 import { Badge, Pill } from "../components/Badge";
 import Modal from "../components/Modal";
@@ -67,7 +67,7 @@ function CustomerHistoryModal({ customer, sales, onClose }) {
   );
 }
 
-export default function SalesPage({ sales, setSales, search: headerSearch, products: propProducts, customers: propCustomers, onAddToast }) {
+export default function SalesPage({ sales, setSales, inventory, setInventory, search: headerSearch, products: propProducts, customers: propCustomers, onAddToast }) {
   const products  = propProducts  || PRODUCTS;
   const customers = propCustomers || CUSTOMERS;
 
@@ -99,16 +99,43 @@ export default function SalesPage({ sales, setSales, search: headerSearch, produ
 
   const handleSave = (row) => {
     if (editRow) {
+      // Editing: adjust the linked inventory "Out" row (if any) to match new qty/item/date.
       setSales((prev) => prev.map((r) => r.id === editRow.id ? row : r));
+      setInventory((prev) => prev.map((r) =>
+        r.autoFrom?.type === "sale" && r.autoFrom.id === editRow.id
+          ? { ...r, date: row.date, variant: row.item, qty: row.qty }
+          : r
+      ));
     } else {
-      setSales((prev) => [row, ...prev]);
+      const available = getStockBalance(inventory, row.item);
+      if (row.qty > available) {
+        const proceed = confirm(
+          `⚠ Low stock: only ${available} unit(s) of "${row.item}" on hand, but selling ${row.qty}.\n\nSave anyway?`
+        );
+        if (!proceed) return;
+      }
+      const saleId = nextId();
+      setSales((prev) => [{ ...row, id: saleId }, ...prev]);
+      // Auto-create the matching Inventory "Out" row so stock stays in sync
+      // without needing a separate manual entry.
+      const cost = getLatestCost(inventory, row.item);
+      setInventory((prev) => [
+        { id: nextId(), date: row.date, variant: row.item, cost, qty: row.qty, entry: "Out", autoFrom: { type: "sale", id: saleId } },
+        ...prev,
+      ]);
     }
   };
 
   const handleDelete = (id, item) => {
     setSales((prev) => prev.filter((r) => r.id !== id));
+    setInventory((prev) => prev.filter((r) => !(r.autoFrom?.type === "sale" && r.autoFrom.id === id)));
     onAddToast && onAddToast(`Deleted sale for "${item.customer}"`, () => {
       setSales((prev) => [item, ...prev]);
+      const cost = getLatestCost(inventory, item.item);
+      setInventory((prev) => [
+        { id: nextId(), date: item.date, variant: item.item, cost, qty: item.qty, entry: "Out", autoFrom: { type: "sale", id } },
+        ...prev,
+      ]);
     });
   };
 

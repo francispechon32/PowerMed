@@ -91,6 +91,8 @@ export const SEED_INVENTORY = [
   { id:68, date:"2026-05-14", variant:"Needles-4mm",        cost:12,    qty:31,  entry:"Out" },
   { id:69, date:"2026-05-26", variant:"Plastic Box",        cost:4,     qty:12,  entry:"Out" },
   { id:70, date:"2026-05-26", variant:"Carton Box",         cost:24,    qty:8,   entry:"Out" },
+  { id:71, date:"2026-05-20", variant:"BPC157-5mg",         cost:1800,  qty:5,   entry:"In"  },
+  { id:72, date:"2026-05-26", variant:"BPC157-5mg",         cost:1800,  qty:2,   entry:"Out", autoFrom:{ type:"sale", id:36 } },
 ];
 
 export const SEED_SALES = [
@@ -144,7 +146,7 @@ export const SEED_CHARITY = [
   { id:5,  date:"2026-02-25", beneficiary:"Jason",    cost:480,  qty:2, item:"Tirzepatide-10mg"  },
   { id:6,  date:"2026-02-16", beneficiary:"Daisy",    cost:480,  qty:1, item:"Tirzepatide-10mg"  },
   { id:7,  date:"2026-03-06", beneficiary:"Mark",     cost:480,  qty:1, item:"Tirzepatide-10mg"  },
-  { id:8,  date:"2026-02-28", beneficiary:"Anton M",  cost:480,  qty:2, item:"Tirzepatide-10mg"  },
+  { id:8,  date:"2026-02-28", beneficiary:"Anton Mauricio",  cost:480,  qty:2, item:"Tirzepatide-10mg"  },
   { id:9,  date:"2026-03-13", beneficiary:"Mark",     cost:480,  qty:1, item:"Tirzepatide-10mg"  },
   { id:10, date:"2026-03-17", beneficiary:"Mark",     cost:480,  qty:1, item:"Tirzepatide-10mg"  },
   { id:11, date:"2026-03-17", beneficiary:"Jasmar",   cost:480,  qty:2, item:"Tirzepatide-10mg"  },

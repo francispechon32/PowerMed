@@ -770,11 +770,22 @@
   display: grid;
   grid-template-columns: 1.8fr 1fr;
   gap: 18px;
-  align-items: start;
+  align-items: stretch;
+}
+
+/* Cap the stock levels card so it never grows taller than the right
+   column — once it has more rows than fit, it scrolls internally
+   instead of pushing the whole page down. */
+.pm-dash-bottom > div:first-child {
+  max-height: 560px;
 }
 
 @media (max-width: 1000px) {
   .pm-dash-bottom { grid-template-columns: 1fr; }
+  .pm-dash-bottom > div:first-child {
+    max-height: none;
+    height: 420px;
+  }
 }
 
 table tbody tr { transition: background 0.1s ease; }
@@ -953,12 +964,6 @@ tr.pm-row-alt:hover { background: #f5f4f2; }
 @media (max-width: 700px) {
   .pm-metrics-row {
     grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 1000px) {
-  .pm-dash-bottom > div:first-child {
-    height: 420px;
   }
 }
 

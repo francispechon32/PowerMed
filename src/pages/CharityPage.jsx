@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { COLORS, S } from "../styles/tokens";
-import { peso, fmtDate } from "../utils/helpers";
+import { peso, fmtDate, nextId, getStockBalance } from "../utils/helpers";
 import { PRODUCTS } from "../data/seeds";
 import { Pill } from "../components/Badge";
 import Modal from "../components/Modal";
@@ -8,7 +8,7 @@ import { HeartHandshake, Wallet, TrendingUp, BarChart3, Download } from "../comp
 import Pagination, { PER_PAGE } from "../components/Pagination";
 import { exportCsv } from "../utils/exportCsv";
 
-export default function CharityPage({ charity, setCharity, search: headerSearch, products: propProducts, onAddToast }) {
+export default function CharityPage({ charity, setCharity, inventory, setInventory, search: headerSearch, products: propProducts, onAddToast }) {
   const products = propProducts || PRODUCTS;
 
   const [search, setSearch]   = useState("");
@@ -35,15 +35,38 @@ export default function CharityPage({ charity, setCharity, search: headerSearch,
   const handleSave = (row) => {
     if (editRow) {
       setCharity((prev) => prev.map((r) => r.id === editRow.id ? row : r));
+      setInventory((prev) => prev.map((r) =>
+        r.autoFrom?.type === "charity" && r.autoFrom.id === editRow.id
+          ? { ...r, date: row.date, variant: row.item, qty: row.qty, cost: row.cost }
+          : r
+      ));
     } else {
-      setCharity((prev) => [row, ...prev]);
+      const available = getStockBalance(inventory, row.item);
+      if (row.qty > available) {
+        const proceed = confirm(
+          `⚠ Low stock: only ${available} unit(s) of "${row.item}" on hand, but giving out ${row.qty}.\n\nSave anyway?`
+        );
+        if (!proceed) return;
+      }
+      const charityId = nextId();
+      setCharity((prev) => [{ ...row, id: charityId }, ...prev]);
+      // Auto-create the matching Inventory "Out" row so stock stays in sync.
+      setInventory((prev) => [
+        { id: nextId(), date: row.date, variant: row.item, cost: row.cost, qty: row.qty, entry: "Out", autoFrom: { type: "charity", id: charityId } },
+        ...prev,
+      ]);
     }
   };
 
   const handleDelete = (id, item) => {
     setCharity((prev) => prev.filter((r) => r.id !== id));
+    setInventory((prev) => prev.filter((r) => !(r.autoFrom?.type === "charity" && r.autoFrom.id === id)));
     onAddToast && onAddToast(`Deleted charity entry for "${item.beneficiary}"`, () => {
       setCharity((prev) => [item, ...prev]);
+      setInventory((prev) => [
+        { id: nextId(), date: item.date, variant: item.item, cost: item.cost, qty: item.qty, entry: "Out", autoFrom: { type: "charity", id } },
+        ...prev,
+      ]);
     });
   };
 
