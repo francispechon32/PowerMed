@@ -8,7 +8,7 @@ export const PRODUCTS = [
 export const CUSTOMERS = [
   "Alda","Abner","Angel","Anton Mauricio","Candy","Che Soler","Daisy",
   "Errol","Jason","Jasmar","Juan","Liza","Maria","Mark","Melody","Micca",
-  "Rita","Teddy","Yano",
+  "Pepo Nunez","Rita","Sofia","Teddy","Yano",
 ];
 
 export const REMARKS_LIST = ["SD", "Cash", "Online", "Billed"];
@@ -93,6 +93,14 @@ export const SEED_INVENTORY = [
   { id:70, date:"2026-05-26", variant:"Carton Box",         cost:24,    qty:8,   entry:"Out" },
   { id:71, date:"2026-05-20", variant:"BPC157-5mg",         cost:1800,  qty:5,   entry:"In"  },
   { id:72, date:"2026-05-26", variant:"BPC157-5mg",         cost:1800,  qty:2,   entry:"Out", autoFrom:{ type:"sale", id:36 } },
+  { id:73, date:"2026-06-13", variant:"Mots-C-10mg",        cost:480,   qty:1,   entry:"Out", autoFrom:{ type:"sale", id:41 } },
+  { id:74, date:"2026-06-13", variant:"Retatrutide-10mg",   cost:480,   qty:1,   entry:"Out", autoFrom:{ type:"sale", id:42 } },
+  { id:75, date:"2026-06-13", variant:"Tirzepatide-10mg",   cost:480,   qty:1,   entry:"Out", autoFrom:{ type:"sale", id:43 } },
+  { id:76, date:"2026-06-13", variant:"Peptides Pen",       cost:745,   qty:1,   entry:"Out", autoFrom:{ type:"sale", id:44 } },
+  { id:77, date:"2026-06-13", variant:"Retatrutide-10mg",   cost:480,   qty:3,   entry:"Out", autoFrom:{ type:"sale", id:45 } },
+  { id:78, date:"2026-06-13", variant:"Mots-C-10mg",        cost:480,   qty:2,   entry:"Out", autoFrom:{ type:"sale", id:46 } },
+  { id:79, date:"2026-06-13", variant:"Peptides Pen",       cost:745,   qty:1,   entry:"Out", autoFrom:{ type:"sale", id:47 } },
+  { id:80, date:"2026-06-16", variant:"Retatrutide-10mg",   cost:480,   qty:1,   entry:"Out", autoFrom:{ type:"sale", id:48 } },
 ];
 
 export const SEED_SALES = [
@@ -136,6 +144,14 @@ export const SEED_SALES = [
   { id:38, date:"2026-06-01", customer:"Juan",          price:6000,  qty:1, remarks:"SD",     co:"HR",        item:"Tirzepatide-30mg",  inclusives: ["Peptides Pen", "Syringe-1cc/ml"] },
   { id:39, date:"2026-06-01", customer:"Liza",          price:6000,  qty:1, remarks:"SD",     co:"HR",        item:"Tirzepatide-30mg",  inclusives: ["Plastic cup", "Medicine"] },
   { id:40, date:"2026-06-01", customer:"Alda",          price:2000,  qty:1, remarks:"SD",     co:"HR",        item:"Retatrutide-10mg",  inclusives: ["Syringe-1cc/ml", "Bac Water-10ml"] },
+  { id:41, date:"2026-06-13", customer:"Rita",          price:4000,  qty:1, remarks:"Billed", co:"Sir Teddy", item:"Mots-C-10mg"        },
+  { id:42, date:"2026-06-13", customer:"Rita",          price:4000,  qty:1, remarks:"Billed", co:"Sir Teddy", item:"Retatrutide-10mg"   },
+  { id:43, date:"2026-06-13", customer:"Pepo Nunez",    price:4000,  qty:1, remarks:"Online", co:"Acct1",     item:"Tirzepatide-10mg"  },
+  { id:44, date:"2026-06-13", customer:"Pepo Nunez",    price:3000,  qty:1, remarks:"Online", co:"Acct1",     item:"Peptides Pen"       },
+  { id:45, date:"2026-06-13", customer:"Yano",          price:4000,  qty:3, remarks:"Online", co:"Acct1",     item:"Retatrutide-10mg"  },
+  { id:46, date:"2026-06-13", customer:"Yano",          price:4000,  qty:2, remarks:"Online", co:"Acct1",     item:"Mots-C-10mg"       },
+  { id:47, date:"2026-06-13", customer:"Yano",          price:2000,  qty:1, remarks:"Online", co:"Acct1",     item:"Peptides Pen"       },
+  { id:48, date:"2026-06-16", customer:"Sofia",         price:4000,  qty:1, remarks:"Online", co:"Sir Teddy", item:"Retatrutide-10mg"  },
 ];
 
 export const SEED_CHARITY = [

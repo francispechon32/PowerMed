@@ -7,7 +7,11 @@ function ListManager({ title, icon: Icon, items, onAdd, onDelete, color, placeho
 
   const handleAdd = () => {
     const v = input.trim();
-    if (!v || items.includes(v)) return;
+    if (!v) return;
+    if (items.some((i) => i.toLowerCase() === v.toLowerCase())) {
+      alert(`"${v}" already exists.`);
+      return;
+    }
     onAdd(v);
     setInput("");
   };

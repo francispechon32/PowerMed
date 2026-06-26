@@ -32,7 +32,7 @@ export default function App() {
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
   const [showLowStockAlert, setShowLowStockAlert] = useState(false);
   const [toasts,      setToasts]      = useState([]);
-  const alertShown = useRef(false);
+  const prevLowCount = useRef(0);
 
   const [inventory,  setInventory]  = useLocalStorage("pm-inventory",  SEED_INVENTORY);
   const [sales,      setSales]      = useLocalStorage("pm-sales",       SEED_SALES);
@@ -61,7 +61,7 @@ export default function App() {
   }, [inventory]);
 
   const expiringItems = useMemo(() => {
-    const now  = new Date();
+    const now  = new Date(); now.setHours(0, 0, 0, 0);
     const soon = new Date(now.getTime() + 30 * 86400000);
     const m = {};
     inventory.forEach((r) => {
@@ -80,10 +80,10 @@ export default function App() {
   const totalNotifCount = lowStockItems.length + expiringItems.length;
 
   useEffect(() => {
-    if (!alertShown.current && lowStockItems.length > 0) {
+    if (lowStockItems.length > prevLowCount.current) {
       setShowLowStockAlert(true);
-      alertShown.current = true;
     }
+    prevLowCount.current = lowStockItems.length;
   }, [lowStockItems.length]);
 
   const pageLabel = PAGES.find((p) => p.key === page)?.label ?? "Dashboard";

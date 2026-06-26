@@ -16,8 +16,20 @@ export default function StockPage({ inventory, search }) {
 
   const stockMap = useMemo(() => {
     const m = {};
+
+    // When a start date is set, compute opening balance from all transactions before it
+    if (dateRange.start) {
+      inventory
+        .filter((r) => new Date(r.date + "T00:00:00") < new Date(dateRange.start + "T00:00:00"))
+        .forEach((r) => {
+          if (!m[r.variant]) m[r.variant] = { openingQty: 0, openingVal: 0, inQty: 0, inVal: 0, outQty: 0, outVal: 0, expiries: [] };
+          if (r.entry === "In") { m[r.variant].openingQty += r.qty; m[r.variant].openingVal += r.qty * r.cost; }
+          else { m[r.variant].openingQty -= r.qty; m[r.variant].openingVal -= r.qty * r.cost; }
+        });
+    }
+
     filtered.forEach((r) => {
-      if (!m[r.variant]) m[r.variant] = { inQty: 0, inVal: 0, outQty: 0, outVal: 0, expiries: [] };
+      if (!m[r.variant]) m[r.variant] = { openingQty: 0, openingVal: 0, inQty: 0, inVal: 0, outQty: 0, outVal: 0, expiries: [] };
       if (r.entry === "In") {
         m[r.variant].inQty += r.qty;
         m[r.variant].inVal += r.qty * r.cost;
@@ -28,7 +40,7 @@ export default function StockPage({ inventory, search }) {
       }
     });
     return m;
-  }, [filtered]);
+  }, [inventory, filtered, dateRange.start]);
 
   const today = new Date();
   const in30  = new Date(today.getTime() + 30 * 86400000);
@@ -47,8 +59,8 @@ export default function StockPage({ inventory, search }) {
       "stock.csv",
       ["Product","In Qty","In Value","Out Qty","Out Value","Balance Qty","Balance Value","Status","Nearest Expiry"],
       stockEntries.map(([k, v]) => {
-        const bQty = v.inQty - v.outQty;
-        const bVal = v.inVal - v.outVal;
+        const bQty = v.openingQty + v.inQty - v.outQty;
+        const bVal = v.openingVal + v.inVal - v.outVal;
         const status = bQty <= 0 ? "Empty" : bQty <= 2 ? "Low" : "OK";
         const nearestExpiry = v.expiries.length
           ? v.expiries.sort()[0]
@@ -136,8 +148,8 @@ export default function StockPage({ inventory, search }) {
             </thead>
             <tbody>
               {paged.map(([k, v]) => {
-                const bQty = v.inQty  - v.outQty;
-                const bVal = v.inVal  - v.outVal;
+                const bQty = v.openingQty + v.inQty - v.outQty;
+                const bVal = v.openingVal + v.inVal - v.outVal;
                 const status = bQty <= 0 ? "Empty" : bQty <= 2 ? "Low" : "OK";
                 const statusBadge = {
                   OK:    { background: COLORS.orangeBg, color: COLORS.orange },

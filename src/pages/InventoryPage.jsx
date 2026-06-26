@@ -41,6 +41,10 @@ export default function InventoryPage({ inventory, setInventory, search: headerS
   const paged = filtered.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
 
   const handleSave = (row) => {
+    if (new Date(row.date) > new Date(Date.now() + 86400000)) {
+      const proceed = confirm("⚠ The date is in the future. Save anyway?");
+      if (!proceed) return;
+    }
     if (editRow) {
       setInventory((prev) => prev.map((r) => r.id === editRow.id ? row : r));
     } else {

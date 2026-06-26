@@ -98,8 +98,22 @@ export default function SalesPage({ sales, setSales, inventory, setInventory, se
   const paged      = filtered.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
 
   const handleSave = (row) => {
+    if (new Date(row.date) > new Date(Date.now() + 86400000)) {
+      const proceed = confirm("⚠ The date is in the future. Save anyway?");
+      if (!proceed) return;
+    }
     if (editRow) {
-      // Editing: adjust the linked inventory "Out" row (if any) to match new qty/item/date.
+      // Editing: check stock if qty increases, then sync the linked inventory Out row.
+      const delta = row.qty - editRow.qty;
+      if (delta > 0) {
+        const available = getStockBalance(inventory, row.item);
+        if (delta > available) {
+          const proceed = confirm(
+            `⚠ Low stock: only ${available} extra unit(s) of "${row.item}" available.\n\nSave anyway?`
+          );
+          if (!proceed) return;
+        }
+      }
       setSales((prev) => prev.map((r) => r.id === editRow.id ? row : r));
       setInventory((prev) => prev.map((r) =>
         r.autoFrom?.type === "sale" && r.autoFrom.id === editRow.id
@@ -116,26 +130,38 @@ export default function SalesPage({ sales, setSales, inventory, setInventory, se
       }
       const saleId = nextId();
       setSales((prev) => [{ ...row, id: saleId }, ...prev]);
-      // Auto-create the matching Inventory "Out" row so stock stays in sync
-      // without needing a separate manual entry.
       const cost = getLatestCost(inventory, row.item);
-      setInventory((prev) => [
+      const newEntries = [
         { id: nextId(), date: row.date, variant: row.item, cost, qty: row.qty, entry: "Out", autoFrom: { type: "sale", id: saleId } },
-        ...prev,
-      ]);
+      ];
+      // Auto-deduct stock for bundled inclusive items
+      (row.inclusives || []).forEach((inc) => {
+        if (products.includes(inc)) {
+          const incCost = getLatestCost(inventory, inc);
+          newEntries.push({ id: nextId(), date: row.date, variant: inc, cost: incCost, qty: 1, entry: "Out", autoFrom: { type: "sale-inclusive", id: saleId } });
+        }
+      });
+      setInventory((prev) => [...newEntries, ...prev]);
     }
   };
 
   const handleDelete = (id, item) => {
     setSales((prev) => prev.filter((r) => r.id !== id));
-    setInventory((prev) => prev.filter((r) => !(r.autoFrom?.type === "sale" && r.autoFrom.id === id)));
+    // Remove both the main sale Out entry and any inclusive Out entries linked to this sale
+    setInventory((prev) => prev.filter((r) => !(r.autoFrom?.id === id && (r.autoFrom?.type === "sale" || r.autoFrom?.type === "sale-inclusive"))));
     onAddToast && onAddToast(`Deleted sale for "${item.customer}"`, () => {
       setSales((prev) => [item, ...prev]);
       const cost = getLatestCost(inventory, item.item);
-      setInventory((prev) => [
+      const restoredEntries = [
         { id: nextId(), date: item.date, variant: item.item, cost, qty: item.qty, entry: "Out", autoFrom: { type: "sale", id } },
-        ...prev,
-      ]);
+      ];
+      (item.inclusives || []).forEach((inc) => {
+        if (products.includes(inc)) {
+          const incCost = getLatestCost(inventory, inc);
+          restoredEntries.push({ id: nextId(), date: item.date, variant: inc, cost: incCost, qty: 1, entry: "Out", autoFrom: { type: "sale-inclusive", id } });
+        }
+      });
+      setInventory((prev) => [...restoredEntries, ...prev]);
     });
   };
 

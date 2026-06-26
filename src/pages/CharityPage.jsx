@@ -26,13 +26,17 @@ export default function CharityPage({ charity, setCharity, inventory, setInvento
 
   useEffect(() => { setCurrentPage(1); }, [search]);
 
-  const totalQty = charity.reduce((s, r) => s + r.qty, 0);
-  const totalVal = charity.reduce((s, r) => s + r.qty * r.cost, 0);
+  const totalQty = filtered.reduce((s, r) => s + r.qty, 0);
+  const totalVal = filtered.reduce((s, r) => s + r.qty * r.cost, 0);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const paged      = filtered.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
 
   const handleSave = (row) => {
+    if (new Date(row.date) > new Date(Date.now() + 86400000)) {
+      const proceed = confirm("⚠ The date is in the future. Save anyway?");
+      if (!proceed) return;
+    }
     if (editRow) {
       setCharity((prev) => prev.map((r) => r.id === editRow.id ? row : r));
       setInventory((prev) => prev.map((r) =>
